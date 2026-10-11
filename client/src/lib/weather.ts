@@ -10,23 +10,38 @@ export type WeatherSnapshot = {
   source: string;
   updatedAt: string;
   isLive: boolean;
+  sprayAdvisory?: {
+    canSpray: boolean;
+    reason: string;
+  };
+  irrigationAdvisory?: {
+    needsIrrigation: boolean;
+    recommendation: string;
+  };
 };
 
 export const fallbackWeather: WeatherSnapshot = {
   temperature: 28,
   feelsLike: 29,
   description: "Partly cloudy",
-  precipitationProbability: 80,
-  rainfall: 18,
+  precipitationProbability: 35,
+  rainfall: 0,
   humidity: 68,
   windSpeed: 12,
   location: "Niphad, Nashik",
-  source: "IMD Agromet fallback benchmark",
-  updatedAt: "Offline benchmark",
+  source: "Agromet Benchmark Model",
+  updatedAt: "Regional Climatology",
   isLive: false,
+  sprayAdvisory: {
+    canSpray: true,
+    reason: "Clear conditions suitable for preventive organic spray.",
+  },
+  irrigationAdvisory: {
+    needsIrrigation: true,
+    recommendation: "Regular morning drip cycle recommended.",
+  },
 };
 
-// Comprehensive WMO Weather Interpretation Codes (WW) mapping
 export const weatherCodeText: Record<number, string> = {
   0: "Clear sky",
   1: "Mainly clear",
@@ -37,54 +52,22 @@ export const weatherCodeText: Record<number, string> = {
   51: "Light drizzle",
   53: "Moderate drizzle",
   55: "Dense drizzle",
-  56: "Light freezing drizzle",
-  57: "Dense freezing drizzle",
   61: "Slight rain",
   63: "Moderate rain",
   65: "Heavy rain",
-  66: "Light freezing rain",
-  67: "Heavy freezing rain",
   71: "Slight snowfall",
-  73: "Moderate snowfall",
-  75: "Heavy snowfall",
-  77: "Snow grains",
   80: "Slight rain showers",
   81: "Moderate rain showers",
   82: "Violent rain showers",
-  85: "Slight snow showers",
-  86: "Heavy snow showers",
   95: "Thunderstorm",
   96: "Thunderstorm with slight hail",
   99: "Thunderstorm with heavy hail",
 };
 
-function getEnv(key: string): string | undefined {
-  return (import.meta.env as Record<string, string | undefined>)?.[key];
-}
-
-/**
- * Build request for OpenWeather if configured, or default to free Open-Meteo API.
- * Open-Meteo does not require an API key and supports Asia/Kolkata timezone natively.
- */
 export function buildWeatherRequest(latitude: number, longitude: number): {
   url: string;
   provider: "Open-Meteo" | "OpenWeather";
 } {
-  const configuredUrl = getEnv("VITE_WEATHER_API_URL");
-  const configuredKey = getEnv("VITE_WEATHER_API_KEY");
-
-  // Check if OpenWeather credentials are explicitly configured
-  if (configuredKey && (configuredUrl?.includes("openweathermap.org") || !configuredUrl)) {
-    const base = configuredUrl || "https://api.openweathermap.org/data/2.5/weather";
-    const url = new URL(base);
-    url.searchParams.set("lat", String(latitude));
-    url.searchParams.set("lon", String(longitude));
-    url.searchParams.set("units", "metric");
-    url.searchParams.set("appid", configuredKey);
-    return { url: url.toString(), provider: "OpenWeather" };
-  }
-
-  // Default: Open-Meteo free API (No API key needed)
   const openMeteoUrl = new URL("https://api.open-meteo.com/v1/forecast");
   openMeteoUrl.searchParams.set("latitude", String(latitude));
   openMeteoUrl.searchParams.set("longitude", String(longitude));
@@ -95,90 +78,86 @@ export function buildWeatherRequest(latitude: number, longitude: number): {
   openMeteoUrl.searchParams.set("hourly", "precipitation_probability,rain");
   openMeteoUrl.searchParams.set("forecast_days", "1");
   openMeteoUrl.searchParams.set("timezone", "Asia/Kolkata");
-
   return { url: openMeteoUrl.toString(), provider: "Open-Meteo" };
 }
 
 /**
- * Fetch live weather data using Open-Meteo (or OpenWeather if configured).
- * Implements timeout, network error recovery, and clear fallback data distinction.
+ * Fetch live weather data using backend API or Open-Meteo
  */
 export async function fetchWeather(
   latitude = 20.087,
   longitude = 73.95,
   locationLabel = "Niphad, Nashik",
-  timeoutMs = 8000
+  timeoutMs = 7000
 ): Promise<WeatherSnapshot> {
-  const { url, provider } = buildWeatherRequest(latitude, longitude);
+  // Try backend endpoint first if in browser environment
+  if (typeof window !== "undefined") {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      const res = await fetch(
+        `/api/weather?lat=${latitude}&lon=${longitude}&location=${encodeURIComponent(locationLabel)}`,
+        { signal: controller.signal }
+      );
+      clearTimeout(timeout);
 
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: { Accept: "application/json" },
-    });
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error(`${provider} returned HTTP ${response.status}`);
+      if (res.ok) {
+        const data = await res.json();
+        return {
+          temperature: Number(data.temperature ?? fallbackWeather.temperature),
+          feelsLike: Number(data.feelsLike ?? fallbackWeather.feelsLike),
+          description: String(data.description ?? fallbackWeather.description),
+          precipitationProbability: data.rainfallMm > 0 ? 80 : 25,
+          rainfall: Number(data.rainfallMm ?? 0),
+          humidity: Number(data.humidity ?? fallbackWeather.humidity),
+          windSpeed: Number(data.windSpeedKmh ?? fallbackWeather.windSpeed),
+          location: locationLabel,
+          source: data.source || "OpenWeather Live Feed",
+          updatedAt: "Updated Live",
+          isLive: Boolean(data.isLive),
+          sprayAdvisory: data.sprayAdvisory,
+          irrigationAdvisory: data.irrigationAdvisory,
+        };
+      }
+    } catch {
+      // Fall through to Open-Meteo
     }
+  }
 
-    const data = await response.json();
+  // Open-Meteo free direct API (Works in both Node/Vitest and browser)
+  try {
+    const { url } = buildWeatherRequest(latitude, longitude);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-    if (provider === "OpenWeather") {
-      const rain = Number(data.rain?.["1h"] ?? data.rain?.["3h"] ?? 0);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      const data = await res.json();
+      const cur = data.current || {};
+      const code = Number(cur.weather_code ?? 0);
       return {
-        temperature: Math.round(Number(data.main?.temp ?? fallbackWeather.temperature)),
-        feelsLike: Math.round(Number(data.main?.feels_like ?? fallbackWeather.feelsLike)),
-        description: String(data.weather?.[0]?.description ?? fallbackWeather.description),
-        precipitationProbability: rain > 0 ? 80 : 20,
-        rainfall: Math.round(rain * 10) / 10,
-        humidity: Math.round(Number(data.main?.humidity ?? fallbackWeather.humidity)),
-        windSpeed: Math.round(Number(data.wind?.speed ?? fallbackWeather.windSpeed) * 3.6),
-        location: String(data.name || locationLabel),
-        source: "OpenWeather Live Feed",
-        updatedAt: "Live IMD/OpenWeather",
+        temperature: Math.round(Number(cur.temperature_2m ?? 28)),
+        feelsLike: Math.round(Number(cur.apparent_temperature ?? 28)),
+        description: weatherCodeText[code] || "Partly sunny",
+        precipitationProbability: (cur.rain || 0) > 0 ? 85 : 20,
+        rainfall: Math.round(Number(cur.rain || 0) * 10) / 10,
+        humidity: Math.round(Number(cur.relative_humidity_2m ?? 65)),
+        windSpeed: Math.round(Number(cur.wind_speed_10m ?? 12)),
+        location: locationLabel,
+        source: "Open-Meteo Agro Weather Service",
+        updatedAt: "Live Direct",
         isLive: true,
       };
     }
-
-    // Process Open-Meteo response
-    const current = data.current ?? {};
-    const hourly = data.hourly ?? {};
-    const code = Number(current.weather_code ?? 0);
-    const rain = Number(current.rain ?? current.precipitation ?? 0);
-
-    // Compute precipitation probability for the current hour from hourly forecast
-    let precipProb = 0;
-    if (Array.isArray(hourly.precipitation_probability) && hourly.precipitation_probability.length > 0) {
-      // Find current hour index if available or take max of the upcoming 6 hours
-      const upcomingProbabilities: number[] = hourly.precipitation_probability.slice(0, 6);
-      precipProb = Math.max(...upcomingProbabilities, 0);
-    } else if (rain > 0) {
-      precipProb = 85;
-    }
-
-    return {
-      temperature: Math.round(Number(current.temperature_2m ?? fallbackWeather.temperature)),
-      feelsLike: Math.round(Number(current.apparent_temperature ?? fallbackWeather.feelsLike)),
-      description: weatherCodeText[code] || "Partly cloudy",
-      precipitationProbability: Math.round(precipProb),
-      rainfall: Math.round(rain * 10) / 10,
-      humidity: Math.round(Number(current.relative_humidity_2m ?? fallbackWeather.humidity)),
-      windSpeed: Math.round(Number(current.wind_speed_10m ?? fallbackWeather.windSpeed)),
-      location: locationLabel,
-      source: "Open-Meteo Live (Asia/Kolkata)",
-      updatedAt: "Live IMD / Open-Meteo",
-      isLive: true,
-    };
-  } catch (err) {
-    console.warn(`Weather fetch failed, utilizing fallback data:`, err);
-    return {
-      ...fallbackWeather,
-      location: locationLabel,
-      isLive: false,
-    };
+  } catch {
+    // Network failure recovery
   }
+
+  return {
+    ...fallbackWeather,
+    location: locationLabel,
+  };
 }

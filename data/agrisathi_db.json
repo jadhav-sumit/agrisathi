@@ -1,0 +1,457 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Om Atole",
+      "phone": "9876543210",
+      "email": "om.farmer@agrisathi.in",
+      "password_hash": "$2b$12$v.rAkTnw7oE2GOFhgzHJKuqiKZ6Z3BTzwB.dwJ1mEsVNnu.9RSQES",
+      "role": "farmer",
+      "village": "Niphad",
+      "district": "Nashik",
+      "state": "Maharashtra",
+      "crop": "Onion",
+      "farm_size": "2.4 acres",
+      "tenure": "Tenant cultivator · verified by FPO",
+      "member_id": "KS-MH-2048",
+      "created_at": "2026-10-11T15:23:51.641Z",
+      "updated_at": "2026-10-11T15:50:04.591Z"
+    },
+    {
+      "id": 2,
+      "name": "Krishi Vigyan Administrator",
+      "phone": "9999999999",
+      "email": "admin@agrisathi.in",
+      "password_hash": "$2b$12$myOvsY4L//1xaT3iuhvcwuckVVLFvUM8YS9Te3L1ZuQxjS0.t3FaW",
+      "role": "admin",
+      "village": "Nashik Head Office",
+      "district": "Nashik",
+      "state": "Maharashtra",
+      "crop": "All Crops",
+      "farm_size": "Regional APMC Center",
+      "tenure": "Senior Agronomist / Director",
+      "member_id": "KS-ADM-001",
+      "created_at": "2026-10-11T15:23:52.045Z"
+    },
+    {
+      "id": 3,
+      "name": "Ramesh Pawar",
+      "phone": "9822229091",
+      "email": "ramesh.9822229091@example.com",
+      "password_hash": "$2b$12$vfiupsEM8Dzv5yotZ5v55O0NMKp3ydj1o38I0WM81UVDP.RF.DZgy",
+      "role": "farmer",
+      "village": "Pimpalgaon",
+      "district": "Nashik",
+      "state": "Maharashtra",
+      "crop": "Tomato",
+      "farm_size": "3.5 acres",
+      "tenure": "Owner cultivator",
+      "member_id": "KS-MH-3560",
+      "created_at": "2026-10-11T15:31:45.171Z"
+    },
+    {
+      "id": 4,
+      "name": "Ramesh Pawar",
+      "phone": "9822397503",
+      "email": "ramesh.9822397503@example.com",
+      "password_hash": "$2b$12$zK/WUQF1wye2/ZX3HIR1wevXD6wVtPlxRSnxgssDvxCzk6OYnDSUa",
+      "role": "farmer",
+      "village": "Pimpalgaon",
+      "district": "Nashik",
+      "state": "Maharashtra",
+      "crop": "Tomato",
+      "farm_size": "3.5 acres",
+      "tenure": "Owner cultivator",
+      "member_id": "KS-MH-7741",
+      "created_at": "2026-10-11T15:33:05.187Z"
+    },
+    {
+      "id": 5,
+      "name": "Ramesh Pawar",
+      "phone": "9822941592",
+      "email": "ramesh.9822941592@example.com",
+      "password_hash": "$2b$12$YWSkAEHo.L0ovPaieEyDoenwHoVehyqGMatbHV0PrSHyWs2uDVPVa",
+      "role": "farmer",
+      "village": "Pimpalgaon",
+      "district": "Nashik",
+      "state": "Maharashtra",
+      "crop": "Tomato",
+      "farm_size": "3.5 acres",
+      "tenure": "Owner cultivator",
+      "member_id": "KS-MH-9041",
+      "crop_type": "",
+      "sowing_date": "",
+      "crop_image": null,
+      "land_image": null,
+      "land_unit": "acres",
+      "created_at": "2026-10-11T15:50:02.295Z"
+    }
+  ],
+  "farms": [],
+  "advisories": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "category": "soil",
+      "query": "Provide guidance for soil in 2 acres onion field.",
+      "response": "### 🌾 Soil Health & Fertility Advisory (Onion)\n1. **Nutrient Balance**: Maintain balanced N:P:K ratio. Apply full phosphorus and potassium as basal dose, splitting nitrogen into 2-3 top dressings.\n2. **Soil pH & Structure**: Optimal pH range for Onion is 6.5 - 7.5. Apply agricultural gypsum if dealing with sodic or alkaline soils.\n3. **Organic Carbon**: Incorporate 4-5 tonnes of well-decomposed Farm Yard Manure (FYM) or vermicompost per acre before planting.\n4. **Soil Testing**: Always compare visual symptoms against certified Soil Health Card (SHC) laboratory measurements.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:31:46.863Z"
+    },
+    {
+      "id": 2,
+      "user_id": 1,
+      "category": "weather",
+      "query": "Provide guidance for weather in 2 acres onion field.",
+      "response": "### 🌦️ Agro-Weather Advisory & Risk Alert\n1. **Spraying Window**: Suspend chemical sprays if rainfall probability exceeds 40% or if surface winds exceed 15 km/h.\n2. **Field Drainage**: Ensure drainage channels between furrows are cleared to prevent water stagnation around the root zone.\n3. **Thermal Management**: Apply light irrigation during heat spikes to maintain microclimate humidity.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:31:47.117Z"
+    },
+    {
+      "id": 3,
+      "user_id": 1,
+      "category": "pest",
+      "query": "Provide guidance for pest in 2 acres onion field.",
+      "response": "### 🐛 Pest Identification & Integrated Pest Management (IPM)\n1. **Detection**: Silvery streaks and curling leaves indicate thrips or sucking pests.\n2. **Biological & Cultural Controls**:\n   - Install 15-20 blue and yellow sticky traps per acre.\n   - Spray 5% Neem Seed Kernel Extract (NSKE) or Neem Oil (10,000 ppm @ 2-3 ml/L).\n3. **Chemical Threshold**: If infestation crosses the Economic Threshold Level (ETL), apply recommended insecticides strictly according to KVK guidance.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:31:47.356Z"
+    },
+    {
+      "id": 4,
+      "user_id": 1,
+      "category": "seed",
+      "query": "Provide guidance for seed in 2 acres onion field.",
+      "response": "### 🌱 Seed Quality & Germination Testing\n1. **Home Germination Test**: Place 100 sample seeds on a moist cotton cloth for 5-7 days. Viable batches show >80% germination.\n2. **Seed Treatment**: Treat seeds with Trichoderma viride (5g/kg) or certified fungicides to prevent damping-off and seed-borne pathogens.\n3. **Storage Guidelines**: Store certified seed stock in cool, dry, rodent-proof bins with moisture below 8%.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:31:47.662Z"
+    },
+    {
+      "id": 5,
+      "user_id": 1,
+      "category": "fertilizer",
+      "query": "Provide guidance for fertilizer in 2 acres onion field.",
+      "response": "### 🧪 Balanced Fertilizer Recommendations (2.4 acres)\n1. **Basal Dose**: 50 kg DAP + 30 kg MOP + 10 kg Zinc Sulphate per acre during field preparation.\n2. **Top Dressing**: Apply urea in split doses at 30 and 45 days after planting, preferably through fertigation or right before light irrigation.\n3. **Safety**: Never apply chemical fertilizer on completely dry soil or immediately before torrential rain.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:31:47.957Z"
+    },
+    {
+      "id": 6,
+      "user_id": 1,
+      "category": "resources",
+      "query": "Provide guidance for resources in 2 acres onion field.",
+      "response": "### 📋 Agricultural Resource & Budget Planner\n1. **Input Planning**: Procure certified seeds and bio-fertilizers 2 weeks prior to planting season.\n2. **Labor & Machinery**: Pre-book weeding and harvesting labor 3-4 days ahead to avoid peak-season wage surges.\n3. **Efficiency**: Adopting drip irrigation and fertigation cuts fertilizer losses by up to 30% and electricity runtime by 40%.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:31:48.241Z"
+    },
+    {
+      "id": 7,
+      "user_id": 1,
+      "category": "practice",
+      "query": "Provide guidance for practice in 2 acres onion field.",
+      "response": "### 📖 Good Agricultural Practices (GAP)\n1. **Land Preparation**: Perform 2 deep summer ploughings followed by rotavator tilling to destroy overwintering pupae and weeds.\n2. **Crop Rotation**: Alternate heavy feeders like onion or wheat with leguminous green manure crops (dhaincha, sunnhemp).\n3. **Intercultural Operations**: Complete first weeding within 20-25 days; earth-up bulbs to encourage vigorous development.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:31:48.585Z"
+    },
+    {
+      "id": 8,
+      "user_id": 1,
+      "category": "irrigation",
+      "query": "Provide guidance for irrigation in 2 acres onion field.",
+      "response": "### 💧 Irrigation Scheduling & Water Management\n1. **Application Method**: Drip irrigation provides 90%+ water-use efficiency compared to conventional flood furrows.\n2. **Scheduling**: Irrigate during early morning hours to minimize evaporative losses. Maintain 50-60% available soil moisture.\n3. **Waterlogging Warning**: Onion roots are shallow and sensitive to standing water; avoid irrigating if rain is imminent.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:31:48.850Z"
+    },
+    {
+      "id": 9,
+      "user_id": 1,
+      "category": "soil",
+      "query": "Provide guidance for soil in 2 acres onion field.",
+      "response": "### 🌾 Soil Health & Fertility Advisory (Onion)\n1. **Nutrient Balance**: Maintain balanced N:P:K ratio. Apply full phosphorus and potassium as basal dose, splitting nitrogen into 2-3 top dressings.\n2. **Soil pH & Structure**: Optimal pH range for Onion is 6.5 - 7.5. Apply agricultural gypsum if dealing with sodic or alkaline soils.\n3. **Organic Carbon**: Incorporate 4-5 tonnes of well-decomposed Farm Yard Manure (FYM) or vermicompost per acre before planting.\n4. **Soil Testing**: Always compare visual symptoms against certified Soil Health Card (SHC) laboratory measurements.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:33:08.038Z"
+    },
+    {
+      "id": 10,
+      "user_id": 1,
+      "category": "weather",
+      "query": "Provide guidance for weather in 2 acres onion field.",
+      "response": "### 🌦️ Agro-Weather Advisory & Risk Alert\n1. **Spraying Window**: Suspend chemical sprays if rainfall probability exceeds 40% or if surface winds exceed 15 km/h.\n2. **Field Drainage**: Ensure drainage channels between furrows are cleared to prevent water stagnation around the root zone.\n3. **Thermal Management**: Apply light irrigation during heat spikes to maintain microclimate humidity.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:33:08.304Z"
+    },
+    {
+      "id": 11,
+      "user_id": 1,
+      "category": "pest",
+      "query": "Provide guidance for pest in 2 acres onion field.",
+      "response": "### 🐛 Pest Identification & Integrated Pest Management (IPM)\n1. **Detection**: Silvery streaks and curling leaves indicate thrips or sucking pests.\n2. **Biological & Cultural Controls**:\n   - Install 15-20 blue and yellow sticky traps per acre.\n   - Spray 5% Neem Seed Kernel Extract (NSKE) or Neem Oil (10,000 ppm @ 2-3 ml/L).\n3. **Chemical Threshold**: If infestation crosses the Economic Threshold Level (ETL), apply recommended insecticides strictly according to KVK guidance.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:33:08.543Z"
+    },
+    {
+      "id": 12,
+      "user_id": 1,
+      "category": "seed",
+      "query": "Provide guidance for seed in 2 acres onion field.",
+      "response": "### 🌱 Seed Quality & Germination Testing\n1. **Home Germination Test**: Place 100 sample seeds on a moist cotton cloth for 5-7 days. Viable batches show >80% germination.\n2. **Seed Treatment**: Treat seeds with Trichoderma viride (5g/kg) or certified fungicides to prevent damping-off and seed-borne pathogens.\n3. **Storage Guidelines**: Store certified seed stock in cool, dry, rodent-proof bins with moisture below 8%.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:33:08.858Z"
+    },
+    {
+      "id": 13,
+      "user_id": 1,
+      "category": "fertilizer",
+      "query": "Provide guidance for fertilizer in 2 acres onion field.",
+      "response": "### 🧪 Balanced Fertilizer Recommendations (2.4 acres)\n1. **Basal Dose**: 50 kg DAP + 30 kg MOP + 10 kg Zinc Sulphate per acre during field preparation.\n2. **Top Dressing**: Apply urea in split doses at 30 and 45 days after planting, preferably through fertigation or right before light irrigation.\n3. **Safety**: Never apply chemical fertilizer on completely dry soil or immediately before torrential rain.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:33:09.125Z"
+    },
+    {
+      "id": 14,
+      "user_id": 1,
+      "category": "resources",
+      "query": "Provide guidance for resources in 2 acres onion field.",
+      "response": "### 📋 Agricultural Resource & Budget Planner\n1. **Input Planning**: Procure certified seeds and bio-fertilizers 2 weeks prior to planting season.\n2. **Labor & Machinery**: Pre-book weeding and harvesting labor 3-4 days ahead to avoid peak-season wage surges.\n3. **Efficiency**: Adopting drip irrigation and fertigation cuts fertilizer losses by up to 30% and electricity runtime by 40%.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:33:09.675Z"
+    },
+    {
+      "id": 15,
+      "user_id": 1,
+      "category": "practice",
+      "query": "Provide guidance for practice in 2 acres onion field.",
+      "response": "### 📖 Good Agricultural Practices (GAP)\n1. **Land Preparation**: Perform 2 deep summer ploughings followed by rotavator tilling to destroy overwintering pupae and weeds.\n2. **Crop Rotation**: Alternate heavy feeders like onion or wheat with leguminous green manure crops (dhaincha, sunnhemp).\n3. **Intercultural Operations**: Complete first weeding within 20-25 days; earth-up bulbs to encourage vigorous development.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:33:11.495Z"
+    },
+    {
+      "id": 16,
+      "user_id": 1,
+      "category": "irrigation",
+      "query": "Provide guidance for irrigation in 2 acres onion field.",
+      "response": "### 💧 Irrigation Scheduling & Water Management\n1. **Application Method**: Drip irrigation provides 90%+ water-use efficiency compared to conventional flood furrows.\n2. **Scheduling**: Irrigate during early morning hours to minimize evaporative losses. Maintain 50-60% available soil moisture.\n3. **Waterlogging Warning**: Onion roots are shallow and sensitive to standing water; avoid irrigating if rain is imminent.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:33:11.734Z"
+    },
+    {
+      "id": 17,
+      "user_id": 1,
+      "category": "soil",
+      "query": "Provide guidance for soil in 2 acres onion field.",
+      "response": "### 🌾 Soil Health & Fertility Advisory (Onion)\n1. **Nutrient Balance**: Maintain balanced N:P:K ratio. Apply full phosphorus and potassium as basal dose, splitting nitrogen into 2-3 top dressings.\n2. **Soil pH & Structure**: Optimal pH range for Onion is 6.5 - 7.5. Apply agricultural gypsum if dealing with sodic or alkaline soils.\n3. **Organic Carbon**: Incorporate 4-5 tonnes of well-decomposed Farm Yard Manure (FYM) or vermicompost per acre before planting.\n4. **Soil Testing**: Always compare visual symptoms against certified Soil Health Card (SHC) laboratory measurements.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:50:05.063Z"
+    },
+    {
+      "id": 18,
+      "user_id": 1,
+      "category": "weather",
+      "query": "Provide guidance for weather in 2 acres onion field.",
+      "response": "### 🌦️ Agro-Weather Advisory & Risk Alert\n1. **Spraying Window**: Suspend chemical sprays if rainfall probability exceeds 40% or if surface winds exceed 15 km/h.\n2. **Field Drainage**: Ensure drainage channels between furrows are cleared to prevent water stagnation around the root zone.\n3. **Thermal Management**: Apply light irrigation during heat spikes to maintain microclimate humidity.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:50:05.384Z"
+    },
+    {
+      "id": 19,
+      "user_id": 1,
+      "category": "pest",
+      "query": "Provide guidance for pest in 2 acres onion field.",
+      "response": "### 🐛 Pest Identification & Integrated Pest Management (IPM)\n1. **Detection**: Silvery streaks and curling leaves indicate thrips or sucking pests.\n2. **Biological & Cultural Controls**:\n   - Install 15-20 blue and yellow sticky traps per acre.\n   - Spray 5% Neem Seed Kernel Extract (NSKE) or Neem Oil (10,000 ppm @ 2-3 ml/L).\n3. **Chemical Threshold**: If infestation crosses the Economic Threshold Level (ETL), apply recommended insecticides strictly according to KVK guidance.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:50:05.624Z"
+    },
+    {
+      "id": 20,
+      "user_id": 1,
+      "category": "seed",
+      "query": "Provide guidance for seed in 2 acres onion field.",
+      "response": "### 🌱 Seed Quality & Germination Testing\n1. **Home Germination Test**: Place 100 sample seeds on a moist cotton cloth for 5-7 days. Viable batches show >80% germination.\n2. **Seed Treatment**: Treat seeds with Trichoderma viride (5g/kg) or certified fungicides to prevent damping-off and seed-borne pathogens.\n3. **Storage Guidelines**: Store certified seed stock in cool, dry, rodent-proof bins with moisture below 8%.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:50:05.894Z"
+    },
+    {
+      "id": 21,
+      "user_id": 1,
+      "category": "fertilizer",
+      "query": "Provide guidance for fertilizer in 2 acres onion field.",
+      "response": "### 🧪 Balanced Fertilizer Recommendations (2.4 acres)\n1. **Basal Dose**: 50 kg DAP + 30 kg MOP + 10 kg Zinc Sulphate per acre during field preparation.\n2. **Top Dressing**: Apply urea in split doses at 30 and 45 days after planting, preferably through fertigation or right before light irrigation.\n3. **Safety**: Never apply chemical fertilizer on completely dry soil or immediately before torrential rain.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:50:06.177Z"
+    },
+    {
+      "id": 22,
+      "user_id": 1,
+      "category": "resources",
+      "query": "Provide guidance for resources in 2 acres onion field.",
+      "response": "### 📋 Agricultural Resource & Budget Planner\n1. **Input Planning**: Procure certified seeds and bio-fertilizers 2 weeks prior to planting season.\n2. **Labor & Machinery**: Pre-book weeding and harvesting labor 3-4 days ahead to avoid peak-season wage surges.\n3. **Efficiency**: Adopting drip irrigation and fertigation cuts fertilizer losses by up to 30% and electricity runtime by 40%.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:50:06.505Z"
+    },
+    {
+      "id": 23,
+      "user_id": 1,
+      "category": "practice",
+      "query": "Provide guidance for practice in 2 acres onion field.",
+      "response": "### 📖 Good Agricultural Practices (GAP)\n1. **Land Preparation**: Perform 2 deep summer ploughings followed by rotavator tilling to destroy overwintering pupae and weeds.\n2. **Crop Rotation**: Alternate heavy feeders like onion or wheat with leguminous green manure crops (dhaincha, sunnhemp).\n3. **Intercultural Operations**: Complete first weeding within 20-25 days; earth-up bulbs to encourage vigorous development.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:50:06.822Z"
+    },
+    {
+      "id": 24,
+      "user_id": 1,
+      "category": "irrigation",
+      "query": "Provide guidance for irrigation in 2 acres onion field.",
+      "response": "### 💧 Irrigation Scheduling & Water Management\n1. **Application Method**: Drip irrigation provides 90%+ water-use efficiency compared to conventional flood furrows.\n2. **Scheduling**: Irrigate during early morning hours to minimize evaporative losses. Maintain 50-60% available soil moisture.\n3. **Waterlogging Warning**: Onion roots are shallow and sensitive to standing water; avoid irrigating if rain is imminent.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T15:50:07.065Z"
+    },
+    {
+      "id": 25,
+      "user_id": 1,
+      "category": "soil",
+      "query": "How to improve organic matter in black soil?",
+      "response": "### 🌾 Soil Health & Fertility Advisory (Onion)\n1. **Nutrient Balance**: Maintain balanced N:P:K ratio. Apply full phosphorus and potassium as basal dose, splitting nitrogen into 2-3 top dressings.\n2. **Soil pH & Structure**: Optimal pH range for Onion is 6.5 - 7.5. Apply agricultural gypsum if dealing with sodic or alkaline soils.\n3. **Organic Carbon**: Incorporate 4-5 tonnes of well-decomposed Farm Yard Manure (FYM) or vermicompost per acre before planting.\n4. **Soil Testing**: Always compare visual symptoms against certified Soil Health Card (SHC) laboratory measurements.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T16:12:12.968Z"
+    },
+    {
+      "id": 26,
+      "user_id": 1,
+      "category": "weather",
+      "query": "Is it safe to spray pesticides today?",
+      "response": "### 🌦️ Agro-Weather Advisory & Risk Alert\n1. **Spraying Window**: Suspend chemical sprays if rainfall probability exceeds 40% or if surface winds exceed 15 km/h.\n2. **Field Drainage**: Ensure drainage channels between furrows are cleared to prevent water stagnation around the root zone.\n3. **Thermal Management**: Apply light irrigation during heat spikes to maintain microclimate humidity.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T16:12:18.942Z"
+    },
+    {
+      "id": 27,
+      "user_id": 1,
+      "category": "pest",
+      "query": "How to control thrips with organic neem oil?",
+      "response": "### 🐛 Pest Identification & Integrated Pest Management (IPM)\n1. **Detection**: Silvery streaks and curling leaves indicate thrips or sucking pests.\n2. **Biological & Cultural Controls**:\n   - Install 15-20 blue and yellow sticky traps per acre.\n   - Spray 5% Neem Seed Kernel Extract (NSKE) or Neem Oil (10,000 ppm @ 2-3 ml/L).\n3. **Chemical Threshold**: If infestation crosses the Economic Threshold Level (ETL), apply recommended insecticides strictly according to KVK guidance.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T16:12:23.082Z"
+    },
+    {
+      "id": 28,
+      "user_id": 1,
+      "category": "seed",
+      "query": "How to test seed germination rate at home?",
+      "response": "### 🌱 Seed Quality & Germination Testing\n1. **Home Germination Test**: Place 100 sample seeds on a moist cotton cloth for 5-7 days. Viable batches show >80% germination.\n2. **Seed Treatment**: Treat seeds with Trichoderma viride (5g/kg) or certified fungicides to prevent damping-off and seed-borne pathogens.\n3. **Storage Guidelines**: Store certified seed stock in cool, dry, rodent-proof bins with moisture below 8%.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T16:12:29.345Z"
+    },
+    {
+      "id": 29,
+      "user_id": 1,
+      "category": "fertilizer",
+      "query": "Basal fertilizer dose for 2 acres",
+      "response": "### 🧪 Balanced Fertilizer Recommendations (2.4 acres)\n1. **Basal Dose**: 50 kg DAP + 30 kg MOP + 10 kg Zinc Sulphate per acre during field preparation.\n2. **Top Dressing**: Apply urea in split doses at 30 and 45 days after planting, preferably through fertigation or right before light irrigation.\n3. **Safety**: Never apply chemical fertilizer on completely dry soil or immediately before torrential rain.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T16:12:33.957Z"
+    },
+    {
+      "id": 30,
+      "user_id": 1,
+      "category": "resources",
+      "query": "Estimate seasonal budget for 2-acre crop",
+      "response": "### 📋 Agricultural Resource & Budget Planner\n1. **Input Planning**: Procure certified seeds and bio-fertilizers 2 weeks prior to planting season.\n2. **Labor & Machinery**: Pre-book weeding and harvesting labor 3-4 days ahead to avoid peak-season wage surges.\n3. **Efficiency**: Adopting drip irrigation and fertigation cuts fertilizer losses by up to 30% and electricity runtime by 40%.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T16:12:40.224Z"
+    },
+    {
+      "id": 31,
+      "user_id": 1,
+      "category": "practice",
+      "query": "Step-by-step land preparation for transplanting",
+      "response": "### 📖 Good Agricultural Practices (GAP)\n1. **Land Preparation**: Perform 2 deep summer ploughings followed by rotavator tilling to destroy overwintering pupae and weeds.\n2. **Crop Rotation**: Alternate heavy feeders like onion or wheat with leguminous green manure crops (dhaincha, sunnhemp).\n3. **Intercultural Operations**: Complete first weeding within 20-25 days; earth-up bulbs to encourage vigorous development.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T16:12:47.606Z"
+    },
+    {
+      "id": 32,
+      "user_id": 1,
+      "category": "irrigation",
+      "query": "How long to run drip pump in winter?",
+      "response": "### 💧 Irrigation Scheduling & Water Management\n1. **Application Method**: Drip irrigation provides 90%+ water-use efficiency compared to conventional flood furrows.\n2. **Scheduling**: Irrigate during early morning hours to minimize evaporative losses. Maintain 50-60% available soil moisture.\n3. **Waterlogging Warning**: Onion roots are shallow and sensitive to standing water; avoid irrigating if rain is imminent.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T16:12:54.143Z"
+    },
+    {
+      "id": 33,
+      "user_id": 1,
+      "category": "fertilizer",
+      "query": "Basal fertilizer dose for 2 acres",
+      "response": "### 🧪 Balanced Fertilizer Recommendations (2.4 acres)\n1. **Basal Dose**: 50 kg DAP + 30 kg MOP + 10 kg Zinc Sulphate per acre during field preparation.\n2. **Top Dressing**: Apply urea in split doses at 30 and 45 days after planting, preferably through fertigation or right before light irrigation.\n3. **Safety**: Never apply chemical fertilizer on completely dry soil or immediately before torrential rain.",
+      "language": "en",
+      "provider": "AgriSathi Verified Agro-Knowledge Engine",
+      "created_at": "2026-10-11T16:14:21.821Z"
+    }
+  ],
+  "password_resets": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "token_hash": "e72072927db6a2a12e6e7c747a9ed5aeffb4103afad94442b1f2f669cae10868",
+      "expires_at": "2026-10-11T16:33:06.441Z",
+      "used": true,
+      "created_at": "2026-10-11T15:33:06.443Z"
+    },
+    {
+      "id": 2,
+      "user_id": 1,
+      "token_hash": "339a0456ff33d745c62554752c0d563853c51dfc5077e90b8837b694995f71a8",
+      "expires_at": "2026-10-11T16:33:07.242Z",
+      "used": true,
+      "created_at": "2026-10-11T15:33:07.244Z"
+    },
+    {
+      "id": 3,
+      "user_id": 1,
+      "token_hash": "d0998dd4939f86e522f3ea50f21ccc658cd0f13cb5f2c5c70cf374e04750c94c",
+      "expires_at": "2026-10-11T16:50:03.471Z",
+      "used": true,
+      "created_at": "2026-10-11T15:50:03.472Z"
+    },
+    {
+      "id": 4,
+      "user_id": 1,
+      "token_hash": "9645990809cff8d20ff051987cc25c61118b6d6f89bdbc2233810c964ae26fba",
+      "expires_at": "2026-10-11T16:50:04.216Z",
+      "used": true,
+      "created_at": "2026-10-11T15:50:04.217Z"
+    }
+  ]
+}
