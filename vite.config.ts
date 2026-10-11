@@ -203,7 +203,37 @@ function vitePluginStorageProxy(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), vitePluginStorageProxy()];
+function vitePluginAgriSathiApi(): Plugin {
+  return {
+    name: "agrisathi-api-dev",
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use(async (req, res, next) => {
+        if (req.url && req.url.startsWith("/api")) {
+          try {
+            const { createApp } = await import("./server/index");
+            const app = createApp();
+            app(req as any, res as any, next);
+          } catch (err) {
+            console.error("API middleware error:", err);
+            next(err);
+          }
+        } else {
+          next();
+        }
+      });
+    },
+  };
+}
+
+const plugins = [
+  react(),
+  tailwindcss(),
+  jsxLocPlugin(),
+  vitePluginManusRuntime(),
+  vitePluginManusDebugCollector(),
+  vitePluginStorageProxy(),
+  vitePluginAgriSathiApi(),
+];
 
 export default defineConfig({
   plugins,

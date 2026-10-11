@@ -29,12 +29,20 @@ import {
   VolumeX,
   Waves,
   X,
+  Bot,
+  MapPin,
+  Sparkles,
+  Map as MapIcon,
 } from "lucide-react";
 import type { Locale, ModuleId } from "@/lib/i18n";
 import { getTranslation, localeSpeechCodes, moduleColors, moduleIds } from "@/lib/i18n";
 import { useVoice } from "@/hooks/useVoice";
 import type { FarmerProfile } from "@/lib/auth";
 import { fetchWeather, type WeatherSnapshot } from "@/lib/weather";
+import { AiAssistant } from "@/components/AiAssistant";
+import { CropScanner } from "@/components/CropScanner";
+import { MandiTracker } from "@/components/MandiTracker";
+import { MapView } from "@/components/Map";
 
 type HomeProps = { locale: Locale; setLocale: (locale: Locale) => void; profile: FarmerProfile; onLogout: () => void };
 type IconType = typeof Leaf;
@@ -151,7 +159,7 @@ function VoiceGuide({ locale, voice, onClose }: { locale: Locale; voice: ReturnT
   );
 }
 
-function DetailPanel({ id, locale, voice, onBack }: { id: ModuleId; locale: Locale; voice: ReturnType<typeof useVoice>; onBack: () => void }) {
+function DetailPanel({ id, locale, voice, profile, onBack }: { id: ModuleId; locale: Locale; voice: ReturnType<typeof useVoice>; profile: FarmerProfile; onBack: () => void }) {
   const t = getTranslation(locale);
   const detail = detailCopy[locale][id];
   const Icon = moduleIcons[id];
@@ -160,7 +168,37 @@ function DetailPanel({ id, locale, voice, onBack }: { id: ModuleId; locale: Loca
     <main className="detail-page">
       <button className="back-link" onClick={onBack}><MoveLeft size={17} />{t.back}</button>
       <div className="detail-hero"><div className="detail-icon"><Icon size={28} /></div><div><div className="eyebrow">{detail.eyebrow}</div><h1>{detail.headline}</h1><p>{detail.body}</p></div><button className="speak-detail" onClick={() => voice.speak(`${detail.headline}. ${detail.body}`)}><Volume2 size={18} />{t.speak}</button></div>
-      <div className="detail-grid"><section className="plan-card"><div className="plan-card-header"><div><span className="card-kicker">{t.recommended}</span><h2>{t.nextTask}</h2></div><StatusPill tone="green">{t.stable}</StatusPill></div><div className="plan-metric"><strong>{detail.metric}</strong><span>{detail.metricLabel}</span></div><ol className="step-list">{detail.steps.map((step, index) => <li key={step}><span>{index + 1}</span><p>{step}</p></li>)}</ol><button className="primary-button full" onClick={() => setSaved(true)}>{saved ? <><Check size={18} />{t.saved}</> : <><ShieldCheck size={18} />{t.useThisPlan}</>}</button></section><aside className="detail-aside"><div className="field-context"><span className="card-kicker">{t.fieldSnapshot}</span><div className="context-row"><span>{t.crop}</span><strong>{t.cropValue}</strong></div><div className="context-row"><span>{t.acres}</span><strong>2 acres</strong></div><div className="context-row"><span>{t.stage}</span><strong>{t.stageValue}</strong></div><div className="context-row"><span>{t.village}</span><strong>{t.villageValue}</strong></div></div><div className="trust-card"><div className="trust-icon"><Radio size={18} /></div><div><strong>{t.dataTrust}</strong><p>{t.source}: ICAR · {t.lastUpdated}</p><span>{t.confidence}: 86%</span></div></div><div className="fallback-card"><div className="fallback-icon"><AudioLines size={18} /></div><div><strong>{t.audioFallback}</strong><p>{t.audioFallbackBody}</p></div></div></aside></div>
+      <div className="detail-grid"><section className="plan-card"><div className="plan-card-header"><div><span className="card-kicker">{t.recommended}</span><h2>{t.nextTask}</h2></div><StatusPill tone="green">{t.stable}</StatusPill></div><div className="plan-metric"><strong>{detail.metric}</strong><span>{detail.metricLabel}</span></div><ol className="step-list">{detail.steps.map((step, index) => <li key={step}><span>{index + 1}</span><p>{step}</p></li>)}</ol><button className="primary-button full" onClick={() => setSaved(true)}>{saved ? <><Check size={18} />{t.saved}</> : <><ShieldCheck size={18} />{t.useThisPlan}</>}</button></section><aside className="detail-aside"><div className="field-context"><span className="card-kicker">{t.fieldSnapshot}</span><div className="context-row"><span>{t.crop}</span><strong>{profile.crop || t.cropValue}</strong></div><div className="context-row"><span>{t.acres}</span><strong>{profile.farmSize}</strong></div><div className="context-row"><span>{t.stage}</span><strong>{t.stageValue}</strong></div><div className="context-row"><span>{t.village}</span><strong>{profile.village}, {profile.district}</strong></div></div><div className="trust-card"><div className="trust-icon"><Radio size={18} /></div><div><strong>{t.dataTrust}</strong><p>{t.source}: ICAR · {t.lastUpdated}</p><span>{t.confidence}: 86%</span></div></div><div className="fallback-card"><div className="fallback-icon"><AudioLines size={18} /></div><div><strong>{t.audioFallback}</strong><p>{t.audioFallbackBody}</p></div></div></aside></div>
+
+      {/* Embedded Live API Integration Modules */}
+      {id === "pest" && (
+        <section className="mt-8">
+          <CropScanner locale={locale} defaultCrop={profile.crop} />
+        </section>
+      )}
+
+      {(id === "fertilizer" || id === "resources") && (
+        <section className="mt-8">
+          <MandiTracker locale={locale} />
+        </section>
+      )}
+
+      {(id === "soil" || id === "irrigation") && (
+        <section className="mt-8 bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm">
+          <div className="mb-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
+              Leaflet & OpenStreetMap Farm Boundary
+            </span>
+            <h3 className="text-base font-bold text-slate-800 mt-1">Interactive Farm Locator</h3>
+            <p className="text-xs text-slate-500">Pinpoint your crop plot or use GPS with explicit permission.</p>
+          </div>
+          <MapView
+            initialCenter={{ lat: 20.087, lng: 73.95 }}
+            markerTitle={`${profile.name}'s Field`}
+            markerDescription={`${profile.village}, ${profile.district} · ${profile.crop} (${profile.farmSize})`}
+          />
+        </section>
+      )}
     </main>
   );
 }
@@ -173,6 +211,8 @@ export default function Home({ locale, setLocale, profile, onLogout }: HomeProps
   const [locationMessage, setLocationMessage] = useState("");
   const [selectedModule, setSelectedModule] = useState<ModuleId | null>(null);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [aiChatOpen, setAiChatOpen] = useState(false);
+  const [showFarmMap, setShowFarmMap] = useState(false);
   const [assisted, setAssisted] = useState(false);
   const [online, setOnline] = useState(true);
   const [activeNav, setActiveNav] = useState("overview");
@@ -234,16 +274,136 @@ export default function Home({ locale, setLocale, profile, onLogout }: HomeProps
       <div className="mobile-topbar"><button className="icon-button" aria-label="Open navigation"><Menu size={20} /></button><div className="brand-lockup"><LogoMark /><strong>{t.brand}</strong></div><button className="icon-button"><BellRing size={19} /></button></div>
       <div className="content-shell">
         {!online && <div className="offline-banner"><Waves size={16} />{t.offlineBanner}</div>}
-        <header className="topbar"><div className="breadcrumb"><span>{t.brand}</span><ChevronRight size={15} /><strong>{selectedModule ? t.module[selectedModule].title : t.overview}</strong></div><div className="topbar-actions"><div className="sync-status"><span className={cn("sync-dot", online ? "is-online" : "is-offline")} />{online ? t.online : t.offlineReady}</div><LocaleSwitcher locale={locale} setLocale={setLocale} /><button className="voice-trigger" onClick={() => setVoiceOpen(true)}><Mic2 size={17} />{t.voiceGuide}</button></div></header>
-        {selectedModule ? <DetailPanel id={selectedModule} locale={locale} voice={voice} onBack={() => { setSelectedModule(null); setActiveNav("overview"); }} /> : <main className="dashboard-main"><section className="welcome-row"><div><div className="eyebrow">{t.dateLabel} · {profile.village}, {profile.district}</div><h1>{t.greeting}, <em>{displayName}</em>.</h1><p>{t.overviewSubtitle}</p></div><div className="welcome-actions"><button className="outline-button" onClick={speakOverview}>{voice.isSpeaking ? <Pause size={16} /> : <Volume2 size={16} />}{voice.isSpeaking ? t.stop : t.speak}</button><button className="primary-button" onClick={() => setVoiceOpen(true)}><Mic size={17} />{t.listen}</button></div></section>
-          <section className="hero-grid"><div className="hero-card"><div className="hero-card-pattern" /><div className="hero-card-content"><div className="hero-card-kicker"><span className="pulse-dot" />{t.nextTask}</div><h2>{t.module.irrigation.title}</h2><p>{t.module.irrigation.short}. {detailCopy[locale].irrigation.headline}</p><button className="hero-link" onClick={() => openModule("irrigation")}>{t.module.irrigation.action}<ArrowRight size={16} /></button></div><div className="hero-weather"><CloudSun size={24} /><strong>{weather ? `${weather.temperature}°` : "28°"}</strong><span>{weather?.description ?? "Partly cloudy"}</span></div></div><div className="snapshot-card"><div className="snapshot-title"><span>{t.fieldSnapshot}</span><button className="location-button" onClick={refreshWeatherForLocation} aria-label={t.useLocation} title={t.useLocation}><LocateFixed size={17} /></button></div><div className="snapshot-value">{profile.farmSize.replace(" acres", "")} <small>acres</small></div><div className="snapshot-location">{weather?.location ?? `${profile.village}, ${profile.district}, ${profile.state}`}</div><div className="snapshot-bars"><div><span>{t.soilMoisture}</span><strong>42%</strong><i><b style={{ width: "42%" }} /></i></div><div><span>{t.rainfall}</span><strong>{weather ? `${weather.rainfall} mm` : "18 mm"}</strong><i><b className="rain-bar" style={{ width: `${weather?.precipitationProbability ?? 66}%` }} /></i></div></div><div className="weather-status"><span className={weather?.isLive ? "is-live" : ""} />{locating ? t.locating : locationMessage || (weather?.isLive ? t.liveWeather : t.mockWeather)}</div></div></section>
-          <section className="status-strip"><div className="status-strip-item"><div className="strip-icon green"><Leaf size={17} /></div><div><span>{t.soilMoisture}</span><strong>{t.soilValue}</strong></div></div><div className="status-strip-item"><div className="strip-icon blue"><Droplets size={17} /></div><div><span>{t.rainfall}</span><strong>{t.rainfallValue}</strong></div></div><div className="status-strip-item"><div className="strip-icon amber"><ShieldCheck size={17} /></div><div><span>{t.dataTrust}</span><strong>{t.modulesCount}</strong></div></div><div className="assisted-toggle"><div><strong>{t.assistedMode}</strong><span>{t.assistedModeBody}</span></div><button className={cn("toggle", assisted && "is-on")} onClick={() => setAssisted(!assisted)} role="switch" aria-checked={assisted}><span /></button></div></section>
-          <section className="section-heading"><div><div className="eyebrow">{t.modulesCount}</div><h2>{t.modules}</h2></div><button className="text-button" onClick={() => setVoiceOpen(true)}><Mic2 size={16} />{t.voiceGuide}</button></section>
-          <section className="module-grid">{moduleIds.map((id) => <ModuleCard key={id} id={id} locale={locale} onOpen={() => openModule(id)} onSpeak={() => voice.speak(`${t.module[id].title}. ${t.module[id].short}`)} />)}</section>
-          <section className="evidence-banner"><div className="evidence-mark"><Radio size={22} /></div><div><strong>{t.dataTrust}</strong><p>{t.dataTrustBody}</p></div><button className="evidence-action" onClick={() => voice.speak(t.dataTrustBody)}><Volume2 size={17} />{t.speak}</button></section>
-        </main>}
+        <header className="topbar">
+          <div className="breadcrumb"><span>{t.brand}</span><ChevronRight size={15} /><strong>{selectedModule ? t.module[selectedModule].title : t.overview}</strong></div>
+          <div className="topbar-actions">
+            <div className="sync-status"><span className={cn("sync-dot", online ? "is-online" : "is-offline")} />{online ? t.online : t.offlineReady}</div>
+            <button
+              className="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-3 py-1.5 rounded-xl shadow-sm transition"
+              onClick={() => setAiChatOpen(true)}
+            >
+              <Bot size={15} />
+              <span>{locale === "hi" ? "AI सलाहकार" : locale === "mr" ? "AI सल्लागार" : "AI Advisor"}</span>
+            </button>
+            <LocaleSwitcher locale={locale} setLocale={setLocale} />
+            <button className="voice-trigger" onClick={() => setVoiceOpen(true)}><Mic2 size={17} />{t.voiceGuide}</button>
+          </div>
+        </header>
+
+        {selectedModule ? (
+          <DetailPanel id={selectedModule} locale={locale} voice={voice} profile={profile} onBack={() => { setSelectedModule(null); setActiveNav("overview"); }} />
+        ) : (
+          <main className="dashboard-main">
+            <section className="welcome-row">
+              <div>
+                <div className="eyebrow">{t.dateLabel} · {profile.village}, {profile.district}</div>
+                <h1>{t.greeting}, <em>{displayName}</em>.</h1>
+                <p>{t.overviewSubtitle}</p>
+              </div>
+              <div className="welcome-actions">
+                <button className="outline-button" onClick={speakOverview}>{voice.isSpeaking ? <Pause size={16} /> : <Volume2 size={16} />}{voice.isSpeaking ? t.stop : t.speak}</button>
+                <button className="outline-button" onClick={() => setAiChatOpen(true)}><Sparkles size={16} className="text-emerald-700" />{locale === "hi" ? "AI सवाल" : locale === "mr" ? "AI सल्ला" : "AI Advisor"}</button>
+                <button className="primary-button" onClick={() => setVoiceOpen(true)}><Mic size={17} />{t.listen}</button>
+              </div>
+            </section>
+
+            <section className="hero-grid">
+              <div className="hero-card">
+                <div className="hero-card-pattern" />
+                <div className="hero-card-content">
+                  <div className="hero-card-kicker"><span className="pulse-dot" />{t.nextTask}</div>
+                  <h2>{t.module.irrigation.title}</h2>
+                  <p>{t.module.irrigation.short}. {detailCopy[locale].irrigation.headline}</p>
+                  <button className="hero-link" onClick={() => openModule("irrigation")}>{t.module.irrigation.action}<ArrowRight size={16} /></button>
+                </div>
+                <div className="hero-weather">
+                  <CloudSun size={24} />
+                  <strong>{weather ? `${weather.temperature}°` : "28°"}</strong>
+                  <span>{weather?.description ?? "Partly cloudy"}</span>
+                </div>
+              </div>
+
+              <div className="snapshot-card">
+                <div className="snapshot-title">
+                  <span>{t.fieldSnapshot}</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      className="location-button"
+                      onClick={() => setShowFarmMap(!showFarmMap)}
+                      aria-label="Toggle Interactive Farm Map"
+                      title="Toggle Interactive Farm Map"
+                    >
+                      <MapIcon size={17} />
+                    </button>
+                    <button
+                      className="location-button"
+                      onClick={refreshWeatherForLocation}
+                      aria-label={t.useLocation}
+                      title={t.useLocation}
+                    >
+                      <LocateFixed size={17} />
+                    </button>
+                  </div>
+                </div>
+                <div className="snapshot-value">{profile.farmSize.replace(" acres", "")} <small>acres</small></div>
+                <div className="snapshot-location">{weather?.location ?? `${profile.village}, ${profile.district}, ${profile.state}`}</div>
+                <div className="snapshot-bars">
+                  <div><span>{t.soilMoisture}</span><strong>42%</strong><i><b style={{ width: "42%" }} /></i></div>
+                  <div><span>{t.rainfall}</span><strong>{weather ? `${weather.rainfall} mm` : "18 mm"}</strong><i><b className="rain-bar" style={{ width: `${weather?.precipitationProbability ?? 66}%` }} /></i></div>
+                </div>
+                <div className="weather-status">
+                  <span className={weather?.isLive ? "is-live" : ""} />
+                  {locating ? t.locating : locationMessage || (weather?.isLive ? t.liveWeather : t.mockWeather)}
+                </div>
+              </div>
+            </section>
+
+            {/* Interactive Leaflet Map Drawer / Expansion */}
+            {showFarmMap && (
+              <section className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm animate-in fade-in">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
+                      OpenStreetMap & Leaflet
+                    </span>
+                    <h3 className="text-base font-bold text-slate-800 mt-1">Farm Boundary & Satellite Coordinates</h3>
+                  </div>
+                  <button
+                    onClick={() => setShowFarmMap(false)}
+                    className="text-slate-400 hover:text-slate-700 text-xs px-2 py-1 bg-slate-100 rounded-lg"
+                  >
+                    Close Map
+                  </button>
+                </div>
+                <MapView
+                  initialCenter={{ lat: 20.087, lng: 73.95 }}
+                  markerTitle={`${profile.name}'s Farm`}
+                  markerDescription={`${profile.village}, ${profile.district} (${profile.crop})`}
+                />
+              </section>
+            )}
+
+            <section className="status-strip">
+              <div className="status-strip-item"><div className="strip-icon green"><Leaf size={17} /></div><div><span>{t.soilMoisture}</span><strong>{t.soilValue}</strong></div></div>
+              <div className="status-strip-item"><div className="strip-icon blue"><Droplets size={17} /></div><div><span>{t.rainfall}</span><strong>{t.rainfallValue}</strong></div></div>
+              <div className="status-strip-item"><div className="strip-icon amber"><ShieldCheck size={17} /></div><div><span>{t.dataTrust}</span><strong>{t.modulesCount}</strong></div></div>
+              <div className="assisted-toggle"><div><strong>{t.assistedMode}</strong><span>{t.assistedModeBody}</span></div><button className={cn("toggle", assisted && "is-on")} onClick={() => setAssisted(!assisted)} role="switch" aria-checked={assisted}><span /></button></div>
+            </section>
+
+            <section className="section-heading"><div><div className="eyebrow">{t.modulesCount}</div><h2>{t.modules}</h2></div><button className="text-button" onClick={() => setVoiceOpen(true)}><Mic2 size={16} />{t.voiceGuide}</button></section>
+            <section className="module-grid">{moduleIds.map((id) => <ModuleCard key={id} id={id} locale={locale} onOpen={() => openModule(id)} onSpeak={() => voice.speak(`${t.module[id].title}. ${t.module[id].short}`)} />)}</section>
+            <section className="evidence-banner"><div className="evidence-mark"><Radio size={22} /></div><div><strong>{t.dataTrust}</strong><p>{t.dataTrustBody}</p></div><button className="evidence-action" onClick={() => voice.speak(t.dataTrustBody)}><Volume2 size={17} />{t.speak}</button></section>
+          </main>
+        )}
       </div>
+
       {voiceOpen && <VoiceGuide locale={locale} voice={voice} onClose={() => setVoiceOpen(false)} />}
+      <AiAssistant
+        locale={locale}
+        profile={profile}
+        isOpen={aiChatOpen}
+        onClose={() => setAiChatOpen(false)}
+      />
     </div>
   );
 }

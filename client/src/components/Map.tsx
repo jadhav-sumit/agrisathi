@@ -1,155 +1,189 @@
-/**
- * GOOGLE MAPS FRONTEND INTEGRATION - ESSENTIAL GUIDE
- *
- * USAGE FROM PARENT COMPONENT:
- * ======
- *
- * const mapRef = useRef<google.maps.Map | null>(null);
- *
- * <MapView
- *   initialCenter={{ lat: 40.7128, lng: -74.0060 }}
- *   initialZoom={15}
- *   onMapReady={(map) => {
- *     mapRef.current = map; // Store to control map from parent anytime, google map itself is in charge of the re-rendering, not react state.
- * </MapView>
- *
- * ======
- * Available Libraries and Core Features:
- * -------------------------------
- * 📍 MARKER (from `marker` library)
- * - Attaches to map using { map, position }
- * new google.maps.marker.AdvancedMarkerElement({
- *   map,
- *   position: { lat: 37.7749, lng: -122.4194 },
- *   title: "San Francisco",
- * });
- *
- * -------------------------------
- * 🏢 PLACES (from `places` library)
- * - Does not attach directly to map; use data with your map manually.
- * const place = new google.maps.places.Place({ id: PLACE_ID });
- * await place.fetchFields({ fields: ["displayName", "location"] });
- * map.setCenter(place.location);
- * new google.maps.marker.AdvancedMarkerElement({ map, position: place.location });
- *
- * -------------------------------
- * 🧭 GEOCODER (from `geocoding` library)
- * - Standalone service; manually apply results to map.
- * const geocoder = new google.maps.Geocoder();
- * geocoder.geocode({ address: "New York" }, (results, status) => {
- *   if (status === "OK" && results[0]) {
- *     map.setCenter(results[0].geometry.location);
- *     new google.maps.marker.AdvancedMarkerElement({
- *       map,
- *       position: results[0].geometry.location,
- *     });
- *   }
- * });
- *
- * -------------------------------
- * 📐 GEOMETRY (from `geometry` library)
- * - Pure utility functions; not attached to map.
- * const dist = google.maps.geometry.spherical.computeDistanceBetween(p1, p2);
- *
- * -------------------------------
- * 🛣️ ROUTES (from `routes` library)
- * - Combines DirectionsService (standalone) + DirectionsRenderer (map-attached)
- * const directionsService = new google.maps.DirectionsService();
- * const directionsRenderer = new google.maps.DirectionsRenderer({ map });
- * directionsService.route(
- *   { origin, destination, travelMode: "DRIVING" },
- *   (res, status) => status === "OK" && directionsRenderer.setDirections(res)
- * );
- *
- * -------------------------------
- * 🌦️ MAP LAYERS (attach directly to map)
- * - new google.maps.TrafficLayer().setMap(map);
- * - new google.maps.TransitLayer().setMap(map);
- * - new google.maps.BicyclingLayer().setMap(map);
- *
- * -------------------------------
- * ✅ SUMMARY
- * - “map-attached” → AdvancedMarkerElement, DirectionsRenderer, Layers.
- * - “standalone” → Geocoder, DirectionsService, DistanceMatrixService, ElevationService.
- * - “data-only” → Place, Geometry utilities.
- */
-
-/// <reference types="@types/google.maps" />
-
-import { useEffect, useRef } from "react";
-import { usePersistFn } from "@/hooks/usePersistFn";
+import { useEffect, useRef, useState } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { LocateFixed, MapPin, Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-declare global {
-  interface Window {
-    google?: typeof google;
-  }
-}
+// Leaflet default icon SVG to avoid missing asset png bundling issues in Vite
+const farmMarkerSvg = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="36" height="36" fill="#1c6b48">
+  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+</svg>
+`;
 
-const API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
-const FORGE_BASE_URL =
-  import.meta.env.VITE_FRONTEND_FORGE_API_URL ||
-  "https://forge.butterfly-effect.dev";
-const MAPS_PROXY_URL = `${FORGE_BASE_URL}/v1/maps/proxy`;
+const farmIcon = L.divIcon({
+  html: `<div style="display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">${farmMarkerSvg}</div>`,
+  className: "custom-farm-marker",
+  iconSize: [36, 36],
+  iconAnchor: [18, 36],
+  popupAnchor: [0, -36],
+});
 
-function loadMapScript() {
-  return new Promise(resolve => {
-    const script = document.createElement("script");
-    script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=marker,places,geocoding,geometry`;
-    script.async = true;
-    script.crossOrigin = "anonymous";
-    script.onload = () => {
-      resolve(null);
-      script.remove(); // Clean up immediately
-    };
-    script.onerror = () => {
-      console.error("Failed to load Google Maps script");
-    };
-    document.head.appendChild(script);
-  });
-}
-
-interface MapViewProps {
+export interface MapViewProps {
   className?: string;
-  initialCenter?: google.maps.LatLngLiteral;
+  initialCenter?: { lat: number; lng: number };
   initialZoom?: number;
-  onMapReady?: (map: google.maps.Map) => void;
+  markerTitle?: string;
+  markerDescription?: string;
+  onLocationSelect?: (coords: { lat: number; lng: number }) => void;
+  onMapReady?: (map: L.Map) => void;
 }
 
 export function MapView({
   className,
-  initialCenter = { lat: 37.7749, lng: -122.4194 },
-  initialZoom = 12,
+  initialCenter = { lat: 20.087, lng: 73.95 }, // Default: Niphad, Nashik, Maharashtra
+  initialZoom = 13,
+  markerTitle = "Farm Location",
+  markerDescription = "Niphad, Nashik (2.4 acres)",
+  onLocationSelect,
   onMapReady,
 }: MapViewProps) {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<google.maps.Map | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
 
-  const init = usePersistFn(async () => {
-    await loadMapScript();
-    if (!mapContainer.current) {
-      console.error("Map container not found");
-      return;
-    }
-    map.current = new window.google.maps.Map(mapContainer.current, {
-      zoom: initialZoom,
-      center: initialCenter,
-      mapTypeControl: true,
-      fullscreenControl: true,
-      zoomControl: true,
-      streetViewControl: true,
-      mapId: "DEMO_MAP_ID",
-    });
-    if (onMapReady) {
-      onMapReady(map.current);
-    }
-  });
+  const [locating, setLocating] = useState(false);
+  const [coords, setCoords] = useState<{ lat: number; lng: number }>(initialCenter);
+  const [geoError, setGeoError] = useState<string | null>(null);
 
   useEffect(() => {
-    init();
-  }, [init]);
+    if (!containerRef.current || mapInstanceRef.current) return;
+
+    // Initialize Leaflet map
+    const map = L.map(containerRef.current, {
+      center: [initialCenter.lat, initialCenter.lng],
+      zoom: initialZoom,
+      zoomControl: true,
+    });
+
+    // Add OpenStreetMap tile layer with required attribution
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',
+      maxZoom: 19,
+    }).addTo(map);
+
+    // Add marker
+    const marker = L.marker([initialCenter.lat, initialCenter.lng], {
+      icon: farmIcon,
+      draggable: true,
+    }).addTo(map);
+
+    marker.bindPopup(`<strong>${markerTitle}</strong><br/>${markerDescription}<br/><small>Lat: ${initialCenter.lat.toFixed(4)}, Lon: ${initialCenter.lng.toFixed(4)}</small>`);
+
+    // Handle marker drag
+    marker.on("dragend", () => {
+      const pos = marker.getLatLng();
+      setCoords({ lat: pos.lat, lng: pos.lng });
+      marker.setPopupContent(
+        `<strong>${markerTitle}</strong><br/>${markerDescription}<br/><small>Lat: ${pos.lat.toFixed(4)}, Lon: ${pos.lng.toFixed(4)}</small>`
+      );
+      if (onLocationSelect) {
+        onLocationSelect({ lat: pos.lat, lng: pos.lng });
+      }
+    });
+
+    // Handle map click to reposition marker
+    map.on("click", (e: L.LeafletMouseEvent) => {
+      marker.setLatLng(e.latlng);
+      setCoords({ lat: e.latlng.lat, lng: e.latlng.lng });
+      marker.setPopupContent(
+        `<strong>${markerTitle}</strong><br/>${markerDescription}<br/><small>Lat: ${e.latlng.lat.toFixed(4)}, Lon: ${e.latlng.lng.toFixed(4)}</small>`
+      );
+      marker.openPopup();
+      if (onLocationSelect) {
+        onLocationSelect({ lat: e.latlng.lat, lng: e.latlng.lng });
+      }
+    });
+
+    mapInstanceRef.current = map;
+    markerRef.current = marker;
+
+    if (onMapReady) {
+      onMapReady(map);
+    }
+
+    return () => {
+      map.remove();
+      mapInstanceRef.current = null;
+    };
+  }, [initialCenter.lat, initialCenter.lng, initialZoom, markerTitle, markerDescription, onLocationSelect, onMapReady]);
+
+  // Explicit user permission geolocation trigger
+  const requestCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setGeoError("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setLocating(true);
+    setGeoError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setCoords({ lat: latitude, lng: longitude });
+        setLocating(false);
+
+        if (mapInstanceRef.current && markerRef.current) {
+          mapInstanceRef.current.setView([latitude, longitude], 15);
+          markerRef.current.setLatLng([latitude, longitude]);
+          markerRef.current.setPopupContent(
+            `<strong>Current Location (GPS)</strong><br/><small>Lat: ${latitude.toFixed(4)}, Lon: ${longitude.toFixed(4)}</small>`
+          );
+          markerRef.current.openPopup();
+        }
+
+        if (onLocationSelect) {
+          onLocationSelect({ lat: latitude, lng: longitude });
+        }
+      },
+      (err) => {
+        setLocating(false);
+        setGeoError(
+          err.code === 1
+            ? "Location permission was denied. Please select your farm manually on the map."
+            : "Could not retrieve your current location. Please tap the map."
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  };
 
   return (
-    <div ref={mapContainer} className={cn("w-full h-[500px]", className)} />
+    <div className={cn("relative w-full rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50", className)}>
+      <div ref={containerRef} className="w-full h-[400px] z-0" />
+
+      {/* Geolocation Controls Overlay */}
+      <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={requestCurrentLocation}
+          disabled={locating}
+          className="flex items-center gap-1.5 bg-white/95 backdrop-blur-sm hover:bg-white text-emerald-800 text-xs font-semibold px-3 py-2 rounded-lg shadow-md border border-emerald-100 transition disabled:opacity-50"
+          title="Click with permission to detect your farm's GPS position"
+        >
+          <LocateFixed size={15} className={cn(locating && "animate-spin text-emerald-600")} />
+          <span>{locating ? "Locating Farm..." : "My Farm GPS"}</span>
+        </button>
+      </div>
+
+      {/* Coordinates / Map Info Bar */}
+      <div className="absolute bottom-2 left-2 z-[1000] bg-white/90 backdrop-blur-sm text-[11px] text-slate-700 px-2.5 py-1 rounded shadow border border-slate-200 flex items-center gap-2">
+        <MapPin size={13} className="text-emerald-700" />
+        <span>
+          Lat: <strong>{coords.lat.toFixed(4)}</strong>, Lon: <strong>{coords.lng.toFixed(4)}</strong>
+        </span>
+        <span className="text-slate-400">|</span>
+        <span className="text-slate-500">Tap map or drag pin to adjust farm location</span>
+      </div>
+
+      {geoError && (
+        <div className="absolute bottom-12 left-2 right-2 z-[1000] bg-amber-50 text-amber-900 border border-amber-300 text-xs p-2 rounded-lg shadow">
+          {geoError}
+        </div>
+      )}
+    </div>
   );
 }
+export default MapView;
