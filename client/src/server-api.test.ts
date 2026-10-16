@@ -2,7 +2,7 @@ import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import { createApp } from "../../server/index";
 import { createServer } from "http";
 
-describe("AgriSathi Full-Stack Integration & Security Tests", { timeout: 15000 }, () => {
+describe("AgriSathi Full-Stack Integration & Security Tests", () => {
   let server: any;
   let baseUrl: string;
   let farmerToken: string = "";
@@ -330,112 +330,47 @@ describe("AgriSathi Full-Stack Integration & Security Tests", { timeout: 15000 }
       expect(jsonMr.disclaimer).toContain("KVK");
     });
 
-    it("GET /api/advisory/services returns integrated API services with credentials status", async () => {
-      const res = await fetch(`${baseUrl}/api/advisory/services`);
-      expect(res.status).toBe(200);
-      const json = await res.json();
-      expect(json.services).toBeInstanceOf(Array);
-      expect(json.services.length).toBeGreaterThanOrEqual(6);
-      const ids = json.services.map((s: any) => s.id);
-      expect(ids).toContain("openrouter");
-      expect(ids).toContain("openweather");
-      expect(ids).toContain("groq");
-      expect(ids).toContain("mistral");
-      expect(ids).toContain("nasa");
-      expect(ids).toContain("geoapify");
+    it("auto-routes queries in single text section to required API domain", async () => {
+      const resAutoPest = await fetch(`${baseUrl}/api/advisory`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: "My onion crop leaves have thrips infestation and purple spots, how to treat?",
+        }),
+      });
+      expect(resAutoPest.status).toBe(200);
+      const jsonPest = await resAutoPest.json();
+      expect(jsonPest.category).toBe("pest");
+
+      const resAutoFert = await fetch(`${baseUrl}/api/advisory`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: "What is the recommended DAP and urea fertilizer dosage per acre?",
+        }),
+      });
+      expect(resAutoFert.status).toBe(200);
+      const jsonFert = await resAutoFert.json();
+      expect(jsonFert.category).toBe("fertilizer");
     });
 
-    it("POST /api/advisory routes to OpenRouter AI with user's OpenRouter API key", async () => {
-      const res = await fetch(`${baseUrl}/api/advisory`, {
+    it("POST /api/analyze-seed provides certified seed quality and germination analysis", async () => {
+      const fakeBase64 = "data:image/jpeg;base64," + Buffer.from("fake-seed-image-data").toString("base64");
+      const res = await fetch(`${baseUrl}/api/analyze-seed`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          category: "soil",
-          message: "What is the best soil pH for onion?",
-          serviceTarget: "openrouter",
-          apiKey: process.env.OPENROUTER_API_KEY || "dummy_openrouter_key",
+          image: fakeBase64,
+          cropName: "Onion",
+          variety: "Agri Found Dark Red",
         }),
       });
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.reply).toBeDefined();
-      expect(json.provider).toContain("OpenRouter");
-    }, 25000);
-
-    it("POST /api/advisory routes to OpenWeather API when serviceTarget='openweather'", async () => {
-      const res = await fetch(`${baseUrl}/api/advisory`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          category: "weather",
-          serviceTarget: "openweather",
-          message: "Check current weather and irrigation alert",
-          language: "en",
-        }),
-      });
-      expect(res.status).toBe(200);
-      const json = await res.json();
-      expect(json.serviceTarget).toBe("openweather");
-      expect(json.provider).toContain("OpenWeather");
-      expect(json.metrics).toBeDefined();
-      expect(typeof json.metrics.temperature).toBe("number");
-      expect(json.reply).toContain("OpenWeather");
-    });
-
-    it("POST /api/advisory routes to NASA Satellite API when serviceTarget='nasa'", async () => {
-      const res = await fetch(`${baseUrl}/api/advisory`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          category: "weather",
-          serviceTarget: "nasa",
-          message: "Analyze satellite solar radiation for crop photosynthesis",
-          language: "en",
-        }),
-      });
-      expect(res.status).toBe(200);
-      const json = await res.json();
-      expect(json.serviceTarget).toBe("nasa");
-      expect(json.provider).toContain("NASA");
-      expect(json.metrics).toBeDefined();
-      expect(typeof json.metrics.solarRadiationMj).toBe("number");
-      expect(json.reply).toContain("NASA");
-    });
-
-    it("POST /api/advisory routes to Geoapify API when serviceTarget='geoapify'", async () => {
-      const res = await fetch(`${baseUrl}/api/advisory`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          category: "resources",
-          serviceTarget: "geoapify",
-          message: "Locate Nashik agricultural district coordinates and KVK",
-          language: "en",
-        }),
-      });
-      expect(res.status).toBe(200);
-      const json = await res.json();
-      expect(json.serviceTarget).toBe("geoapify");
-      expect(json.provider).toContain("Geoapify");
-      expect(json.metrics).toBeDefined();
-      expect(typeof json.metrics.latitude).toBe("number");
-    });
-
-    it("POST /api/advisory auto-detects natural language intent for weather query", async () => {
-      const res = await fetch(`${baseUrl}/api/advisory`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          category: "general",
-          serviceTarget: "auto",
-          message: "Will it rain tomorrow in my village? Should I spray?",
-          language: "en",
-        }),
-      });
-      expect(res.status).toBe(200);
-      const json = await res.json();
-      expect(json.serviceTarget).toBe("openweather");
-      expect(json.provider).toContain("OpenWeather");
+      expect(json.result).toBeDefined();
+      expect(json.result.qualityGrade).toBeDefined();
+      expect(typeof json.result.germinationEstimated).toBe("number");
+      expect(json.result.treatments.length).toBeGreaterThan(0);
     });
   });
 
@@ -483,84 +418,15 @@ describe("AgriSathi Full-Stack Integration & Security Tests", { timeout: 15000 }
     });
   });
 
-  // 10. Strict Agricultural Vision Diagnostics: Pest Detection (Leaves) & Seed Quality (Seeds)
-  describe("Agricultural Vision Diagnostics (Strict Leaf & Seed Enforcement)", () => {
-    // 1x1 base64 mock image
-    const mockImage = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=";
-
-    it("POST /api/pest/detect accepts a valid plant leaf photo and returns diagnostic details", async () => {
-      const res = await fetch(`${baseUrl}/api/pest/detect`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image: mockImage,
-          cropName: "Onion",
-          language: "en",
-          clientMetrics: { isLeafCandidate: true, detectedType: "leaf" },
-        }),
-      });
+  // 9. Mandi Commodity Prices
+  describe("Mandi Commodity Prices", () => {
+    it("GET /api/mandi-prices returns Agmarknet market benchmark records", async () => {
+      const res = await fetch(`${baseUrl}/api/mandi-prices?commodity=Onion`);
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.isLeaf).toBe(true);
-      expect(json.result).toBeDefined();
-      expect(json.result.diseaseName).toBeDefined();
-      expect(json.result.treatments.biological).toBeInstanceOf(Array);
-      expect(json.result.treatments.chemical).toBeInstanceOf(Array);
-    });
-
-    it("POST /api/pest/detect rejects seed photos and non-leaf uploads with clear error", async () => {
-      const res = await fetch(`${baseUrl}/api/pest/detect`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image: mockImage,
-          cropName: "Onion",
-          language: "en",
-          clientMetrics: { isLeafCandidate: false, detectedType: "seed" },
-        }),
-      });
-      expect(res.status).toBe(200);
-      const json = await res.json();
-      expect(json.isLeaf).toBe(false);
-      expect(json.error).toContain("Seed photo detected");
-    });
-
-    it("POST /api/seed/analyze accepts valid crop seeds photo and returns quality report", async () => {
-      const res = await fetch(`${baseUrl}/api/seed/analyze`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image: mockImage,
-          cropName: "Onion",
-          language: "en",
-          clientMetrics: { isSeedCandidate: true, detectedType: "seed" },
-        }),
-      });
-      expect(res.status).toBe(200);
-      const json = await res.json();
-      expect(json.isSeeds).toBe(true);
-      expect(json.result).toBeDefined();
-      expect(typeof json.result.purityPercentage).toBe("number");
-      expect(typeof json.result.germinationPotential).toBe("number");
-      expect(json.result.recommendedTreatment).toBeInstanceOf(Array);
-    });
-
-    it("POST /api/seed/analyze rejects plant leaf uploads with clear error directing to pest detection", async () => {
-      const res = await fetch(`${baseUrl}/api/seed/analyze`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image: mockImage,
-          cropName: "Onion",
-          language: "en",
-          clientMetrics: { isSeedCandidate: false, detectedType: "leaf" },
-        }),
-      });
-      expect(res.status).toBe(200);
-      const json = await res.json();
-      expect(json.isSeeds).toBe(false);
-      expect(json.error).toContain("Plant leaf photo detected");
+      expect(json.records).toBeInstanceOf(Array);
+      expect(json.records.length).toBeGreaterThan(0);
+      expect(json.records[0].commodity).toContain("Onion");
     });
   });
 });
-

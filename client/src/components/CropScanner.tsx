@@ -12,6 +12,7 @@ import {
   Volume2,
 } from "lucide-react";
 import type { Locale } from "@/lib/i18n";
+import { CameraModal } from "./CameraModal";
 import { useVoice } from "@/hooks/useVoice";
 
 interface CropScannerProps {
@@ -30,60 +31,17 @@ interface DiagnosisResult {
   disclaimer: string;
 }
 
-/**
- * Client-Side Image Compressor for rural low-bandwidth networks
- * Downscales photos to max 1280px width/height and compresses to WebP/JPEG ~200KB
- */
-function compressImage(file: File, maxDim = 1280, quality = 0.8): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        let width = img.width;
-        let height = img.height;
-
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          } else {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
-        }
-
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          resolve(e.target?.result as string);
-          return;
-        }
-
-        ctx.drawImage(img, 0, 0, width, height);
-        const compressedBase64 = canvas.toDataURL("image/jpeg", quality);
-        resolve(compressedBase64);
-      };
-      img.onerror = reject;
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 export function CropScanner({ locale, defaultCrop = "Onion" }: CropScannerProps) {
-  const voice = useVoice(locale);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<DiagnosisResult | null>(null);
   const [configured, setConfigured] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const voice = useVoice(locale);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -92,25 +50,24 @@ export function CropScanner({ locale, defaultCrop = "Onion" }: CropScannerProps)
       return;
     }
 
-    setError(null);
-    setAnalyzing(true);
-
-    try {
-      // Compress client-side to save mobile data & prevent timeouts
-      const compressedBase64 = await compressImage(file);
-      setImagePreview(compressedBase64);
-      await analyzeLeaf(compressedBase64);
-    } catch (err) {
-      console.error("Compression error:", err);
-      // Fallback to direct reading
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        setImagePreview(base64);
-        analyzeLeaf(base64);
-      };
-      reader.readAsDataURL(file);
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image size exceeds 5MB limit. Please take or choose a smaller photo.");
+      return;
     }
+
+    setError(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      setImagePreview(base64);
+      analyzeLeaf(base64);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCameraCapture = (base64Image: string) => {
+    setImagePreview(base64Image);
+    analyzeLeaf(base64Image);
   };
 
   const analyzeLeaf = async (base64Image: string) => {
@@ -158,36 +115,30 @@ export function CropScanner({ locale, defaultCrop = "Onion" }: CropScannerProps)
 
   const speakResult = () => {
     if (!result) return;
-    const text =
-      locale === "mr"
-        ? `पिकाचे नाव: ${result.plantName}. रोग ओळख: ${result.diseaseName}. खात्री: ${Math.round(result.confidence * 100)} टक्के. उपाय: ${result.treatments.join(". ")}`
-        : locale === "hi"
-        ? `फसल: ${result.plantName}। रोग पहचान: ${result.diseaseName}। विश्वास: ${Math.round(result.confidence * 100)}%। उपचार: ${result.treatments.join(". ")}`
-        : `Crop: ${result.plantName}. Diagnosis: ${result.diseaseName}. Confidence: ${Math.round(result.confidence * 100)}%. Treatments: ${result.treatments.join(". ")}`;
-
+    const text = `${result.diseaseName}. ${result.description || ""}. Recommended treatments: ${result.treatments.join(". ")}`;
     voice.speak(text);
   };
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden p-5">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
-            ICAR & Plant Pathology Diagnostic
+          <span className="text-xs font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md">
+            Pest Detection AI Advisor
           </span>
           <h3 className="text-lg font-bold text-slate-800 mt-1">
             {locale === "hi"
-              ? "फसल रोग पहचान एवं त्वरित निदान"
+              ? "कीट एवं फसल रोग पहचान"
               : locale === "mr"
-              ? "पीक रोग व कीड ओळख आणि अचूक उपाय"
-              : "Crop Disease Identification & Care"}
+                ? "कीड व पीक रोग ओळख व उपाय"
+                : "Pest & Crop Disease AI Identification"}
           </h3>
           <p className="text-xs text-slate-500">
             {locale === "hi"
-              ? "पत्ती या पौधे की स्पष्ट फोटो अपलोड करें (स्वचालित कंप्रेसन युक्त)"
+              ? "प्रभावित पत्ती या पौधे की फोटो खींचें या अपलोड करें"
               : locale === "mr"
-              ? "बाधित पानाचा स्पष्ट फोटो काढा किंवा जोडा (जलद 2G/3G अपलोड)"
-              : "Upload or capture photo (auto-compressed for low-bandwidth networks)"}
+                ? "बाधित पान किंवा पिकाचा फोटो काढा अथवा अपलोड करा"
+                : "Capture a photo with camera or upload image of affected plant"}
           </p>
         </div>
 
@@ -204,8 +155,9 @@ export function CropScanner({ locale, defaultCrop = "Onion" }: CropScannerProps)
           <div className="flex items-center gap-2">
             {result && (
               <button
+                type="button"
                 onClick={speakResult}
-                className="flex items-center gap-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-lg font-medium transition"
+                className="flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg font-medium transition"
               >
                 <Volume2 size={14} /> Listen
               </button>
@@ -222,27 +174,35 @@ export function CropScanner({ locale, defaultCrop = "Onion" }: CropScannerProps)
 
       {/* Upload Drop Zone / Camera Trigger */}
       {!imagePreview && (
-        <div
-          onClick={triggerUpload}
-          className="border-2 border-dashed border-emerald-200 hover:border-emerald-500 bg-emerald-50/40 hover:bg-emerald-50/70 rounded-xl p-8 text-center cursor-pointer transition flex flex-col items-center justify-center gap-3"
-        >
-          <div className="w-14 h-14 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-md">
+        <div className="border-2 border-dashed border-amber-200 bg-amber-50/30 rounded-xl p-6 sm:p-8 text-center flex flex-col items-center justify-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-amber-600 text-white flex items-center justify-center shadow-md">
             <Camera size={26} />
           </div>
           <div>
             <strong className="text-sm font-semibold text-slate-800 block">
-              {locale === "mr" ? "फोटो काढण्यासाठी किंवा निवडण्यासाठी टॅप करा" : "Tap to capture or choose photo"}
+              Capture or upload crop & pest photo
             </strong>
             <span className="text-xs text-slate-500">
-              {locale === "mr" ? "कॅमेरा किंवा गॅलरी (स्वयंचलित ऑप्टिमाइझ)" : "Camera or Gallery (auto-optimized for 2G/3G)"}
+              High-resolution photo of affected leaves, stems, or pests
             </span>
           </div>
-          <button
-            type="button"
-            className="mt-1 bg-white border border-emerald-300 text-emerald-800 text-xs font-semibold px-4 py-2 rounded-lg shadow-sm flex items-center gap-1.5"
-          >
-            <Upload size={14} /> {locale === "mr" ? "पानाचा फोटो निवडा" : "Select Crop Photo"}
-          </button>
+
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => setCameraOpen(true)}
+              className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-2 transition"
+            >
+              <Camera size={16} /> 📸 Capture Photo (Camera)
+            </button>
+            <button
+              type="button"
+              onClick={triggerUpload}
+              className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-2 transition"
+            >
+              <Upload size={16} /> 📁 Upload from Gallery
+            </button>
+          </div>
         </div>
       )}
 
@@ -252,14 +212,14 @@ export function CropScanner({ locale, defaultCrop = "Onion" }: CropScannerProps)
           <div className="flex gap-4 items-start">
             <img
               src={imagePreview}
-              alt="Uploaded leaf"
+              alt="Uploaded leaf or pest"
               className="w-28 h-28 object-cover rounded-xl border border-slate-200 shadow-sm shrink-0"
             />
             <div className="flex-1">
               {analyzing ? (
                 <div className="h-28 flex flex-col items-center justify-center gap-2 text-slate-500 text-xs">
-                  <Loader2 size={24} className="animate-spin text-emerald-600" />
-                  <span>Scanning leaf pathology and symptom patterns...</span>
+                  <Loader2 size={24} className="animate-spin text-amber-600" />
+                  <span>Sending photo to Pest AI Advisor for diagnosis...</span>
                 </div>
               ) : result ? (
                 <div>
@@ -273,46 +233,40 @@ export function CropScanner({ locale, defaultCrop = "Onion" }: CropScannerProps)
                       </span>
                     ) : (
                       <span className="text-[11px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <AlertTriangle size={12} /> Stress Detected
+                        <AlertTriangle size={12} /> Infestation / Stress
                       </span>
                     )}
                   </div>
                   <p className="text-xs text-slate-600 mt-1">
-                    Plant: <strong>{result.plantName}</strong> | Confidence:{" "}
+                    Crop: <strong>{result.plantName}</strong> | AI Confidence:{" "}
                     <strong>{Math.round(result.confidence * 100)}%</strong>
                   </p>
                   <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
                     <div
-                      className="bg-emerald-600 h-full rounded-full transition-all duration-500"
+                      className="bg-amber-600 h-full rounded-full transition-all duration-500"
                       style={{ width: `${Math.min(100, Math.round(result.confidence * 100))}%` }}
                     />
                   </div>
+                  {result.description && (
+                    <p className="text-xs text-slate-600 mt-2">{result.description}</p>
+                  )}
                 </div>
               ) : null}
             </div>
           </div>
 
-          {/* Configuration notice if live API key is missing */}
-          {!configured && (
-            <div className="bg-blue-50 border border-blue-200 text-blue-900 text-xs p-3 rounded-xl flex items-start gap-2">
-              <Info size={16} className="text-blue-600 shrink-0 mt-0.5" />
-              <div>
-                <strong>Reference Guide Mode:</strong> Showing verified crop symptom benchmark. To activate real-time neural vision diagnosis, add <code className="bg-blue-100 px-1 py-0.5 rounded text-[11px]">PLANT_ID_API_KEY</code> from <a href="https://plant.id/" target="_blank" rel="noreferrer" className="underline font-bold">Plant.id</a> to your server <code className="bg-blue-100 px-1 py-0.5 rounded text-[11px]">.env</code> file.
-              </div>
-            </div>
-          )}
-
           {/* Recommendations & Action Steps */}
           {result && (
             <div className="space-y-3 pt-2">
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5">
-                <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                  Recommended Action Steps:
+                <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-amber-600" />
+                  Recommended Treatment & Control Steps:
                 </h5>
                 <ul className="space-y-1.5 text-xs text-slate-700">
                   {result.treatments.map((step, idx) => (
                     <li key={idx} className="flex items-start gap-2">
-                      <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                      <span className="w-4 h-4 rounded-full bg-amber-100 text-amber-900 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
                         {idx + 1}
                       </span>
                       <span>{step}</span>
@@ -336,6 +290,15 @@ export function CropScanner({ locale, defaultCrop = "Onion" }: CropScannerProps)
           )}
         </div>
       )}
+
+      {/* Live Camera Viewfinder Modal */}
+      <CameraModal
+        isOpen={cameraOpen}
+        onClose={() => setCameraOpen(false)}
+        onCapture={handleCameraCapture}
+        title="Capture Pest / Leaf Photo"
+        subtitle="Hold steady and align the damaged leaf or insect within the frame"
+      />
     </div>
   );
 }

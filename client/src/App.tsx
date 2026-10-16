@@ -39,38 +39,12 @@ function Router({
               onGoAdmin={() => setLocation("/admin")}
             />
           ) : (
-            <Login
-              locale={locale}
-              setLocale={setLocale}
-              onLogin={(newProf) => {
-                onLogin(newProf);
-                setLocation("/");
-              }}
-            />
+            <Login locale={locale} setLocale={setLocale} onLogin={onLogin} />
           )
         }
       </Route>
       <Route path="/login">
-        {() =>
-          profile ? (
-            <Home
-              locale={locale}
-              setLocale={setLocale}
-              profile={profile}
-              onLogout={onLogout}
-              onGoAdmin={() => setLocation("/admin")}
-            />
-          ) : (
-            <Login
-              locale={locale}
-              setLocale={setLocale}
-              onLogin={(newProf) => {
-                onLogin(newProf);
-                setLocation("/");
-              }}
-            />
-          )
-        }
+        {() => <Login locale={locale} setLocale={setLocale} onLogin={onLogin} />}
       </Route>
       <Route path="/admin">
         {() =>
@@ -82,14 +56,7 @@ function Router({
               onBackToFarmer={() => setLocation("/")}
             />
           ) : (
-            <Login
-              locale={locale}
-              setLocale={setLocale}
-              onLogin={(newProf) => {
-                onLogin(newProf);
-                setLocation("/");
-              }}
-            />
+            <Login locale={locale} setLocale={setLocale} onLogin={onLogin} />
           )
         }
       </Route>

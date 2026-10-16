@@ -9,28 +9,17 @@ export interface GeoLocationResult {
   lon: number;
 }
 
-export function getGeoapifyApiKeys(): string[] {
-  const keys = [
-    process.env.GEOAPIFY_API_KEY,
-    process.env.GEOAPIFY_API_KEY_2,
-    process.env.GEOAPIFY_API_KEY_3,
-    process.env.GEOAPIFY_KEY,
-  ].filter((k): k is string => Boolean(k && k.trim().length > 0));
-  return keys;
-}
-
 export function getGeoapifyApiKey(): string | undefined {
-  const keys = getGeoapifyApiKeys();
-  return keys[0];
+  return process.env.GEOAPIFY_API_KEY || process.env.GEOAPIFY_KEY;
 }
 
 export async function searchAddress(query: string): Promise<GeoLocationResult[]> {
   const clean = query.trim();
   if (!clean || clean.length < 2) return [];
 
-  const keys = getGeoapifyApiKeys();
+  const key = getGeoapifyApiKey();
 
-  for (const key of keys) {
+  if (key) {
     try {
       const url = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(
         clean
@@ -45,24 +34,22 @@ export async function searchAddress(query: string): Promise<GeoLocationResult[]>
       if (resp.ok) {
         const data = (await resp.json()) as any;
         const features = data.features || [];
-        if (features.length > 0) {
-          return features.map((f: any) => {
-            const p = f.properties || {};
-            return {
-              formatted: p.formatted || `${p.name || ""}, ${p.state || "India"}`,
-              name: p.name || p.suburb || p.village,
-              village: p.village || p.suburb || p.city,
-              district: p.county || p.district || p.state_district,
-              state: p.state || "Maharashtra",
-              country: p.country || "India",
-              lat: Number(p.lat || f.geometry?.coordinates?.[1] || 0),
-              lon: Number(p.lon || f.geometry?.coordinates?.[0] || 0),
-            };
-          });
-        }
+        return features.map((f: any) => {
+          const p = f.properties || {};
+          return {
+            formatted: p.formatted || `${p.name || ""}, ${p.state || "India"}`,
+            name: p.name || p.suburb || p.village,
+            village: p.village || p.suburb || p.city,
+            district: p.county || p.district || p.state_district,
+            state: p.state || "Maharashtra",
+            country: p.country || "India",
+            lat: Number(p.lat || f.geometry?.coordinates?.[1] || 0),
+            lon: Number(p.lon || f.geometry?.coordinates?.[0] || 0),
+          };
+        });
       }
     } catch (err: any) {
-      console.warn("[GeoService] Geoapify search key attempt failed, trying next key:", err.message);
+      console.warn("[GeoService] Geoapify search failed, trying fallback:", err.message);
     }
   }
 
@@ -94,9 +81,9 @@ export async function searchAddress(query: string): Promise<GeoLocationResult[]>
 }
 
 export async function reverseGeocode(lat: number, lon: number): Promise<GeoLocationResult | null> {
-  const keys = getGeoapifyApiKeys();
+  const key = getGeoapifyApiKey();
 
-  for (const key of keys) {
+  if (key) {
     try {
       const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${lon}&apiKey=${key}`;
       const resp = await fetch(url);
@@ -116,7 +103,7 @@ export async function reverseGeocode(lat: number, lon: number): Promise<GeoLocat
         }
       }
     } catch (err: any) {
-      console.warn("[GeoService] Reverse geocode error with key, trying next:", err.message);
+      console.warn("[GeoService] Reverse geocode error:", err.message);
     }
   }
 

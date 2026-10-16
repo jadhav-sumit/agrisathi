@@ -4,10 +4,10 @@ import {
   Send,
   X,
   Volume2,
-  VolumeX,
   Sparkles,
-  AlertCircle,
   Loader2,
+  Camera,
+  Upload,
   Leaf,
   CloudSun,
   ScanLine,
@@ -15,12 +15,11 @@ import {
   Tractor,
   BookOpen,
   Droplets,
-  Layers,
-  HelpCircle,
 } from "lucide-react";
 import type { Locale } from "@/lib/i18n";
 import { useVoice } from "@/hooks/useVoice";
 import type { FarmerProfile } from "@/lib/auth";
+import { CameraModal } from "./CameraModal";
 
 export type AssistantMode =
   | "soil"
@@ -39,248 +38,57 @@ interface AiAssistantProps {
   isOpen: boolean;
   onClose: () => void;
   initialMode?: AssistantMode;
+  initialPrompt?: string;
 }
 
 interface ChatMessage {
   id: string;
   sender: "user" | "bot";
   text: string;
+  image?: string;
   category?: AssistantMode;
+  routedCategory?: string;
   provider?: string;
   disclaimer?: string;
 }
 
-const modeConfig: Record<
-  AssistantMode,
-  {
-    icon: typeof Leaf;
-    color: string;
-    labels: Record<Locale, string>;
-    quickPrompts: Record<Locale, string[]>;
-  }
-> = {
-  soil: {
-    icon: Leaf,
-    color: "emerald",
-    labels: {
-      en: "Soil Health",
-      hi: "मिट्टी स्वास्थ्य",
-      mr: "माती आरोग्य",
-    },
-    quickPrompts: {
-      en: [
-        "How to improve organic matter in black soil?",
-        "Symptoms of nitrogen deficiency in onion",
-        "Ideal soil pH range for my crop",
-      ],
-      hi: [
-        "काली मिट्टी में जैविक खाद कैसे बढ़ाएं?",
-        "प्याज़ में नाइट्रोजन की कमी के लक्षण",
-        "मेरी फसल के लिए सही मिट्टी का पीएच",
-      ],
-      mr: [
-        "काळी मातीत सेंद्रिय कर्ब कसा वाढवावा?",
-        "कांदा पिकात नत्राच्या कमतरतेची लक्षणे",
-        "पिकासाठी योग्य मातीचा सामू (pH)",
-      ],
-    },
-  },
-  weather: {
-    icon: CloudSun,
-    color: "sky",
-    labels: {
-      en: "Weather Alert",
-      hi: "मौसम चेतावनी",
-      mr: "हवामान इशारा",
-    },
-    quickPrompts: {
-      en: [
-        "Is it safe to spray pesticides today?",
-        "Protect standing crop from unexpected rain",
-        "High temperature mitigation steps",
-      ],
-      hi: [
-        "क्या आज कीटनाशक छिड़काव करना सुरक्षित है?",
-        "बेमौसम बारिश से खड़ी फसल कैसे बचाएं?",
-        "अत्यधिक गर्मी से फसल बचाने के उपाय",
-      ],
-      mr: [
-        "आज कीटकनाशक फवारणी करावी का?",
-        "अवकाळी पावसापासून पीक कसे वाचवावे?",
-        "उष्णतेच्या लाटेपासून पिकाचे संरक्षण",
-      ],
-    },
-  },
-  pest: {
-    icon: ScanLine,
-    color: "amber",
-    labels: {
-      en: "Pest Detection",
-      hi: "कीट पहचान",
-      mr: "कीड नियंत्रण",
-    },
-    quickPrompts: {
-      en: [
-        "How to control thrips with organic neem oil?",
-        "Yellow spots and curling leaves causes",
-        "Installing sticky traps per acre",
-      ],
-      hi: [
-        "नीम तेल से थ्रिप्स कीट कैसे नियंत्रित करें?",
-        "पत्तियों का पीला पड़ना और मुड़ना",
-        "प्रति एकड़ कितने चिपचिपे ट्रैप लगाएं?",
-      ],
-      mr: [
-        "कडुलिंब अर्क (नीम तेल) फवारणीचे प्रमाण",
-        "पाने पिवळी पडणे आणि चुरमुरणे",
-        "एका एकरासाठी चिकट सापळ्यांचे प्रमाण",
-      ],
-    },
-  },
-  seed: {
-    icon: Sprout,
-    color: "green",
-    labels: {
-      en: "Seed Quality",
-      hi: "बीज गुणवत्ता",
-      mr: "बियाणे प्रत",
-    },
-    quickPrompts: {
-      en: [
-        "How to test seed germination rate at home?",
-        "Trichoderma seed treatment method",
-        "Best certified seed varieties for onion",
-      ],
-      hi: [
-        "घर पर बीज अंकुरण प्रतिशत कैसे जांचें?",
-        "ट्राइकोडर्मा से बीजोपचार की विधि",
-        "प्याज़ की उन्नत और प्रमाणित किस्में",
-      ],
-      mr: [
-        "घरी बियाणे उगवण क्षमता कशी तपासावी?",
-        "ट्रायकोडर्मा बीजप्रक्रिया पद्धत",
-        "कांद्याचे सुधारित व प्रमाणित वाण",
-      ],
-    },
-  },
-  fertilizer: {
-    icon: Sprout,
-    color: "teal",
-    labels: {
-      en: "Fertilizer Advice",
-      hi: "उर्वरक सलाह",
-      mr: "खत व्यवस्थापन",
-    },
-    quickPrompts: {
-      en: [
-        "Basal fertilizer dose for 2 acres",
-        "Urea split application schedule",
-        "Organic compost vs chemical DAP comparison",
-      ],
-      hi: [
-        "2 एकड़ के लिए बेसल खाद की सही मात्रा",
-        "यूरिया की खुराक कितने दिनों में दें?",
-        "गोबर की खाद और डीएपी का सही उपयोग",
-      ],
-      mr: [
-        "२ एकरासाठी खतांची मात्रा (बेसल डोस)",
-        "युरिया खताचे हप्ते कधी द्यावेत?",
-        "सेंद्रिय खत व रासायनिक खतांचा मेळ",
-      ],
-    },
-  },
-  resources: {
-    icon: Tractor,
-    color: "stone",
-    labels: {
-      en: "Resource Planner",
-      hi: "संसाधन योजना",
-      mr: "संसाधन नियोजन",
-    },
-    quickPrompts: {
-      en: [
-        "Estimate seasonal budget for 2-acre crop",
-        "Scheduling labor for weeding and harvest",
-        "Water budgeting for drip irrigation",
-      ],
-      hi: [
-        "2 एकड़ फसल का मौसमी बजट अनुमान",
-        "निराई और कटाई के लिए मजदूरों का नियोजन",
-        "ड्रिप सिंचाई के लिए पानी का हिसाब",
-      ],
-      mr: [
-        "२ एकरासाठी हंगामाचा खर्च व बजेट",
-        "खुरपणी व काढणीसाठी मजुरांचे नियोजन",
-        "ठिबक सिंचनासाठी पाण्याचे नियोजन",
-      ],
-    },
-  },
-  practice: {
-    icon: BookOpen,
-    color: "indigo",
-    labels: {
-      en: "Practice Guide",
-      hi: "कृषि पद्धतियां",
-      mr: "उत्कृष्ट शेती",
-    },
-    quickPrompts: {
-      en: [
-        "Step-by-step land preparation for transplanting",
-        "Crop rotation benefits after onion harvest",
-        "Weed management without heavy herbicide",
-      ],
-      hi: [
-        "रोपाई से पहले खेत तैयार करने के चरण",
-        "प्याज़ के बाद कौन सी दलहनी फसल लगाएं?",
-        "खरपतवार हटाने के सुरक्षित तरीके",
-      ],
-      mr: [
-        "पुनर्लागवडीपूर्वी जमीन तयार करण्याचे टप्पे",
-        "कांद्यानंतर फेरपालटीसाठी कोणते पीक घ्यावे?",
-        "तण नियंत्रणाचे योग्य उपाय",
-      ],
-    },
-  },
-  irrigation: {
-    icon: Droplets,
-    color: "blue",
-    labels: {
-      en: "Irrigation Manage",
-      hi: "सिंचाई प्रबंधन",
-      mr: "पाणी व्यवस्थापन",
-    },
-    quickPrompts: {
-      en: [
-        "How long to run drip pump in winter?",
-        "Symptoms of over-irrigation and root rot",
-        "When to stop watering before harvesting?",
-      ],
-      hi: [
-        "सर्दियों में ड्रिप पंप कितनी देर चलाएं?",
-        "अधिक पानी से जड़ सड़न के लक्षण",
-        "कटाई से कितने दिन पहले पानी बंद करें?",
-      ],
-      mr: [
-        "हिवाळ्यात ठिबक किती वेळ चालू ठेवावे?",
-        "जास्त पाण्यामुळे मुळकुज होण्याची लक्षणे",
-        "काढणीपूर्वी पाणी कधी बंद करावे?",
-      ],
-    },
-  },
-  general: {
-    icon: Bot,
-    color: "emerald",
-    labels: {
-      en: "General Advisory",
-      hi: "सामान्य सलाह",
-      mr: "सर्वसाधारण सल्ला",
-    },
-    quickPrompts: {
-      en: ["General crop advisory", "Market trend advice", "Kisan Call Center support"],
-      hi: ["सामान्य फसल सलाह", "मंडी भाव की स्थिति", "किसान कॉल सेंटर जानकारी"],
-      mr: ["सामान्य पीक सल्ला", "बाजारभाव कल", "किसान हेल्पलाइन माहिती"],
-    },
-  },
+const categoryDisplayNames: Record<string, Record<Locale, string>> = {
+  soil: { en: "Soil Health Expert", hi: "मिट्टी स्वास्थ्य विशेषज्ञ", mr: "माती आरोग्य तज्ज्ञ" },
+  weather: { en: "Weather & Spray Advisory", hi: "मौसम एवं छिड़काव सलाह", mr: "हवामान व फवारणी सल्ला" },
+  pest: { en: "Pest & Disease Diagnosis", hi: "कीट एवं रोग पहचान", mr: "कीड व रोग निदान" },
+  seed: { en: "Seed Quality & Germination", hi: "बीज गुणवत्ता एवं अंकुरण", mr: "बियाणे प्रत व उगवण" },
+  fertilizer: { en: "Fertilizer & Nutrition Guide", hi: "उर्वरक एवं पोषण सलाह", mr: "खत व पोषण व्यवस्थापन" },
+  resources: { en: "Resource & Budget Planner", hi: "संसाधन एवं बजट योजना", mr: "संसाधन व बजेट नियोजन" },
+  practice: { en: "Agricultural Best Practices", hi: "उत्तम कृषि पद्धतियां", mr: "उत्कृष्ट कृषी पद्धती" },
+  irrigation: { en: "Smart Irrigation Advisory", hi: "सिंचाई प्रबंधन", mr: "पाणी व्यवस्थापन" },
+  general: { en: "Comprehensive Agro Assistant", hi: "समग्र कृषि सहायक", mr: "सर्वसमावेशक कृषी सहाय्यक" },
+};
+
+const popularPrompts: Record<Locale, string[]> = {
+  en: [
+    "Identify leaf spots and curled tips on my crop",
+    "How to test seed germination rate at home?",
+    "Balanced N:P:K fertilizer dosage for 2 acres",
+    "Is today's weather safe for pesticide spraying?",
+    "How to manage drip irrigation runtime in winter?",
+    "How to improve organic carbon in black soil?",
+  ],
+  hi: [
+    "पत्तियों पर पीले धब्बे और मुड़ने के कारण व कीटनाशक",
+    "घर पर बीज अंकुरण प्रतिशत कैसे जांचें?",
+    "2 एकड़ के लिए डीएपी और यूरिया की सही मात्रा",
+    "क्या आज कीटनाशक छिड़काव करना सुरक्षित है?",
+    "सर्दियों में ड्रिप सिंचाई कितनी देर चलाएं?",
+    "काली मिट्टी में जैविक कार्बन कैसे बढ़ाएं?",
+  ],
+  mr: [
+    "पाने पिवळी पडणे व चुरमुरणे यावर उपाय व फवारणी",
+    "घरी बियाणे उगवण क्षमता कशी तपासावी?",
+    "२ एकरासाठी खतांची मात्रा (डीएपी व युरिया)",
+    "आज कीटकनाशक फवारणी करावी का?",
+    "हिवाळ्यात ठिबक किती वेळ चालू ठेवावे?",
+    "काळी मातीत सेंद्रिय कर्ब कसा वाढवावा?",
+  ],
 };
 
 export function AiAssistant({
@@ -288,33 +96,36 @@ export function AiAssistant({
   profile,
   isOpen,
   onClose,
-  initialMode = "soil",
+  initialMode,
+  initialPrompt,
 }: AiAssistantProps) {
-  const [selectedMode, setSelectedMode] = useState<AssistantMode>(initialMode);
   const voice = useVoice(locale);
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
       id: "welcome",
       sender: "bot",
-      category: initialMode,
-      provider: "AgriSathi AI Engine",
+      category: "general",
+      provider: "AgriSathi Intelligent Engine",
       text:
         locale === "hi"
-          ? `नमस्ते ${profile.name}! मैं आपका एग्रीसाथी कृषि सलाहकार हूँ। मिट्टी, मौसम, कीट, बीज, खाद या सिंचाई के बारे में कोई भी प्रश्न पूछें।`
+          ? `नमस्ते ${profile.name}! मैं आपका एग्रीसाथी AI सलाहकार हूँ। अपनी खेती, कीट, बीज, खाद, मौसम या सिंचाई के बारे में कोई भी प्रश्न एक ही जगह पूछें — मैं स्वचालित रूप से विशेषज्ञ मॉडल से सटीक उत्तर दूंगा।`
           : locale === "mr"
-          ? `नमस्कार ${profile.name}! मी तुमचा अॅग्रीसाथी कृषी सल्लागार आहे. माती, हवामान, कीड, बियाणे, खते किंवा सिंचनाविषयी कोणताही प्रश्न विचारा.`
-          : `Hello ${profile.name}! I am your AgriSathi agricultural advisor. Select any specialized mode above or ask any farming question.`,
+          ? `नमस्कार ${profile.name}! मी तुमचा अॅग्रीसाथी AI सल्लागार आहे. शेती, कीड, बियाणे, खते, हवामान किंवा पाणी व्यवस्थापनाविषयी कोणताही प्रश्न इथेच विचारा — मी आपोआप योग्य तज्ज्ञ प्रणालीद्वारे अचूक सल्ला देईन.`
+          : `Hello ${profile.name}! I am your AgriSathi AI Advisor. Ask any farming query regarding pests, seeds, soil, weather, fertilizer, or irrigation in this single prompt box — I will automatically route your request to the specialized agricultural model.`,
     },
   ]);
   const [input, setInput] = useState("");
+  const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (initialMode && initialMode !== selectedMode) {
-      setSelectedMode(initialMode);
+    if (initialPrompt && isOpen) {
+      sendMessage(initialPrompt);
     }
-  }, [initialMode]);
+  }, [initialPrompt, isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -324,19 +135,37 @@ export function AiAssistant({
 
   if (!isOpen) return null;
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAttachedImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const sendMessage = async (textToSend?: string) => {
     const text = (textToSend || input).trim();
-    if (!text || loading) return;
+    if ((!text && !attachedImage) || loading) return;
 
+    const currentImg = attachedImage;
     const userMsg: ChatMessage = {
       id: `u-${Date.now()}`,
       sender: "user",
-      text,
-      category: selectedMode,
+      text: text || "Please inspect this agricultural photo and provide recommendations.",
+      image: currentImg || undefined,
     };
 
     setMessages((prev) => [...prev, userMsg]);
     if (!textToSend) setInput("");
+    setAttachedImage(null);
     setLoading(true);
 
     try {
@@ -345,19 +174,22 @@ export function AiAssistant({
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          category: selectedMode,
-          message: text,
+          category: initialMode || "general",
+          message: text || "Analyze this crop or seed image",
+          image: currentImg || undefined,
           language: locale,
         }),
       });
 
       const data = await response.json();
+      const detectedCat = data.category || "general";
       const botMsg: ChatMessage = {
         id: `b-${Date.now()}`,
         sender: "bot",
         text: data.reply || data.error || "Unable to get an answer right now.",
-        category: selectedMode,
-        provider: data.provider || "AgriSathi Expert System",
+        category: detectedCat,
+        routedCategory: categoryDisplayNames[detectedCat]?.[locale] || detectedCat,
+        provider: data.provider || "AgriSathi AI Engine",
         disclaimer: data.disclaimer,
       };
 
@@ -368,7 +200,7 @@ export function AiAssistant({
         {
           id: `err-${Date.now()}`,
           sender: "bot",
-          category: selectedMode,
+          category: "general",
           text: "Network error connecting to agricultural advisor. Please verify your connection.",
         },
       ]);
@@ -377,19 +209,6 @@ export function AiAssistant({
     }
   };
 
-  const currentModeInfo = modeConfig[selectedMode];
-  const ModeIcon = currentModeInfo.icon;
-  const modesList: AssistantMode[] = [
-    "soil",
-    "weather",
-    "pest",
-    "seed",
-    "fertilizer",
-    "resources",
-    "practice",
-    "irrigation",
-  ];
-
   return (
     <div
       className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/65 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in"
@@ -397,27 +216,27 @@ export function AiAssistant({
       aria-modal="true"
     >
       <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl flex flex-col h-[700px] max-h-[92vh] overflow-hidden border border-emerald-200">
-        {/* Header */}
+        {/* Header - AI Advisor */}
         <div className="bg-emerald-800 text-white p-3.5 sm:p-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-700/90 flex items-center justify-center border border-emerald-600 shadow-inner">
-              <ModeIcon size={22} className="text-emerald-100" />
+              <Bot size={22} className="text-emerald-100" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-base leading-tight">
                   {locale === "hi"
-                    ? "एग्रीसाथी 8-मोड कृषि सलाहकार"
+                    ? "एग्रीसाथी AI सलाहकार"
                     : locale === "mr"
-                    ? "अॅग्रीसाथी 8-मोड कृषी सल्लागार"
-                    : "AgriSathi 8-Mode AI Advisor"}
+                    ? "अॅग्रीसाथी AI सल्लागार"
+                    : "AgriSathi AI Advisor"}
                 </h3>
                 <span className="bg-emerald-600/80 text-emerald-100 text-[10px] px-2 py-0.5 rounded-full font-semibold">
-                  Multi-LLM Active
+                  Auto-Routing Active
                 </span>
               </div>
               <p className="text-emerald-200 text-xs mt-0.5">
-                Active Mode: <strong>{currentModeInfo.labels[locale]}</strong> · {profile.crop} ({profile.farmSize})
+                Single Prompt Intelligence · {profile.crop} ({profile.farmSize})
               </p>
             </div>
           </div>
@@ -428,29 +247,6 @@ export function AiAssistant({
           >
             <X size={22} />
           </button>
-        </div>
-
-        {/* 8-Mode Selector Ribbon */}
-        <div className="bg-slate-100 border-b border-slate-200 px-3 py-2 overflow-x-auto flex gap-1.5 scrollbar-thin">
-          {modesList.map((m) => {
-            const mData = modeConfig[m];
-            const MIcon = mData.icon;
-            const isSelected = selectedMode === m;
-            return (
-              <button
-                key={m}
-                onClick={() => setSelectedMode(m)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
-                  isSelected
-                    ? "bg-emerald-700 text-white shadow-sm"
-                    : "bg-white text-slate-700 hover:bg-slate-200/80 border border-slate-200"
-                }`}
-              >
-                <MIcon size={14} className={isSelected ? "text-emerald-200" : "text-emerald-700"} />
-                <span>{mData.labels[locale]}</span>
-              </button>
-            );
-          })}
         </div>
 
         {/* Message Area */}
@@ -468,11 +264,16 @@ export function AiAssistant({
                 }`}
               >
                 {m.sender === "bot" && (
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-2 text-[11px] text-slate-500">
+                  <div className="flex flex-wrap items-center justify-between border-b border-slate-100 pb-1.5 mb-2 text-[11px] text-slate-500 gap-2">
                     <span className="font-semibold text-emerald-800 flex items-center gap-1">
                       <Sparkles size={12} />
                       {m.provider || "AgriSathi Agro Engine"}
                     </span>
+                    {m.routedCategory && (
+                      <span className="bg-emerald-100 text-emerald-900 text-[10px] px-2 py-0.5 rounded-full font-semibold">
+                        🎯 {m.routedCategory}
+                      </span>
+                    )}
                     <button
                       onClick={() => voice.speak(m.text)}
                       className="text-slate-400 hover:text-emerald-700 flex items-center gap-1 text-[10px]"
@@ -482,6 +283,14 @@ export function AiAssistant({
                       <span>Listen</span>
                     </button>
                   </div>
+                )}
+
+                {m.image && (
+                  <img
+                    src={m.image}
+                    alt="User attached photo"
+                    className="w-48 h-36 object-cover rounded-xl mb-2.5 border border-white/30 shadow-sm"
+                  />
                 )}
 
                 <div className="whitespace-pre-wrap">{m.text}</div>
@@ -498,20 +307,20 @@ export function AiAssistant({
           {loading && (
             <div className="flex items-center gap-2 text-slate-500 text-xs p-2 bg-white rounded-xl border border-slate-200 w-fit">
               <Loader2 size={16} className="animate-spin text-emerald-700" />
-              <span>Analyzing agricultural database...</span>
+              <span>Analyzing query & routing to specialized agricultural API...</span>
             </div>
           )}
 
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Quick Prompts for Current Mode */}
+        {/* Quick Suggestion Prompts */}
         <div className="px-4 py-2 bg-white border-t border-slate-200">
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-            Quick Questions ({currentModeInfo.labels[locale]}):
+            Quick Inquiries:
           </span>
-          <div className="flex flex-wrap gap-1.5">
-            {currentModeInfo.quickPrompts[locale].map((p, idx) => (
+          <div className="flex flex-wrap gap-1.5 max-h-16 overflow-y-auto">
+            {popularPrompts[locale].map((p, idx) => (
               <button
                 key={idx}
                 onClick={() => sendMessage(p)}
@@ -524,7 +333,27 @@ export function AiAssistant({
           </div>
         </div>
 
-        {/* Input Bar */}
+        {/* Attached Image Preview */}
+        {attachedImage && (
+          <div className="px-4 py-2 bg-slate-100 border-t border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <img
+                src={attachedImage}
+                alt="Attached crop"
+                className="w-12 h-12 object-cover rounded-lg border border-slate-300"
+              />
+              <span className="text-xs text-slate-600">Photo attached for AI analysis</span>
+            </div>
+            <button
+              onClick={() => setAttachedImage(null)}
+              className="text-slate-400 hover:text-slate-700 p-1"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
+        {/* Unified Single Text Input Section */}
         <div className="p-3 bg-white border-t border-slate-200">
           <form
             onSubmit={(e) => {
@@ -533,17 +362,52 @@ export function AiAssistant({
             }}
             className="flex items-center gap-2"
           >
+            {/* Hidden file input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              className="hidden"
+            />
+
+            {/* Photo Capture Buttons */}
+            <button
+              type="button"
+              onClick={() => setCameraOpen(true)}
+              className="p-2.5 rounded-xl text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 border border-slate-200 transition"
+              title="Capture photo with camera"
+            >
+              <Camera size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="p-2.5 rounded-xl text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 border border-slate-200 transition"
+              title="Upload image from device"
+            >
+              <Upload size={18} />
+            </button>
+
+            {/* Single Text Input Container */}
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={`Ask ${currentModeInfo.labels[locale]} question...`}
+              placeholder={
+                locale === "hi"
+                  ? "अपनी फसल, मिट्टी, कीट, बीज या खाद के बारे में कोई भी प्रश्न पूछें..."
+                  : locale === "mr"
+                  ? "पीक, माती, कीड, बियाणे किंवा खताविषयी कोणताही प्रश्न इथे विचारा..."
+                  : "Ask any question about crops, pests, seeds, soil, weather, fertilizer..."
+              }
               disabled={loading}
               className="flex-1 bg-slate-50 border border-slate-300 focus:border-emerald-600 rounded-xl px-4 py-2.5 text-sm outline-none transition"
             />
+
             <button
               type="submit"
-              disabled={loading || !input.trim()}
+              disabled={loading || (!input.trim() && !attachedImage)}
               className="bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white p-2.5 rounded-xl transition shadow-sm"
               aria-label="Send"
             >
@@ -552,6 +416,17 @@ export function AiAssistant({
           </form>
         </div>
       </div>
+
+      {/* Camera Capture Modal */}
+      <CameraModal
+        isOpen={cameraOpen}
+        onClose={() => setCameraOpen(false)}
+        onCapture={(base64) => setAttachedImage(base64)}
+        title="Capture Crop, Pest or Seed Photo"
+        subtitle="Align the affected leaf, pest, or seed sample within the frame"
+      />
     </div>
   );
 }
+
+export default AiAssistant;

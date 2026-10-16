@@ -19,7 +19,6 @@ export interface UserRecord {
   crop_image?: string | null;
   land_image?: string | null;
   land_unit?: string | null;
-  soil_type?: string | null;
   created_at: string;
   updated_at?: string;
 }
