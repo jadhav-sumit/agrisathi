@@ -415,3 +415,30 @@ button:focus-visible, a:focus-visible { outline: 3px solid rgba(28, 107, 72, 0.4
   .manual-form label, .manual-form label:nth-of-type(1), .manual-form label:nth-of-type(2), .manual-form label:nth-of-type(7), .manual-form label:nth-of-type(8) { grid-column: auto; }
   .manual-form .login-error, .manual-form .login-button { grid-column: auto; }
 }
+
+/* Sunlight Mode for Outdoor Field Readability */
+.sunlight-mode {
+  background-color: #f7faf7 !important;
+  color: #05140b !important;
+  filter: contrast(1.15) saturate(1.1);
+}
+.sunlight-mode .app-shell,
+.sunlight-mode .content-shell,
+.sunlight-mode .dashboard-main {
+  background-color: #f7faf7 !important;
+}
+.sunlight-mode article,
+.sunlight-mode section,
+.sunlight-mode .bg-white,
+.sunlight-mode .bg-slate-50 {
+  border-color: #235433 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+.sunlight-mode strong,
+.sunlight-mode h1,
+.sunlight-mode h2,
+.sunlight-mode h3,
+.sunlight-mode h4 {
+  color: #031409 !important;
+}
+

@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS users (
   crop_image MEDIUMTEXT NULL,
   land_image MEDIUMTEXT NULL,
   land_unit VARCHAR(50) NULL DEFAULT 'acres',
+  soil_type VARCHAR(100) NULL DEFAULT 'Black Cotton Soil (काळी माती)',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_phone (phone),

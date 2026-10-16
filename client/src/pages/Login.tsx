@@ -24,8 +24,6 @@ import type { Locale } from "@/lib/i18n";
 import {
   apiLogin,
   apiRegister,
-  demoCredentials,
-  adminCredentials,
   type FarmerProfile,
 } from "@/lib/auth";
 
@@ -66,6 +64,15 @@ const i18nTexts = {
     cropType: "Crop Season / Type",
     sowingDate: "Sowing / Planting Date",
     tenure: "Cultivator Status",
+    soilType: "Soil Type (माती / मिट्टी का प्रकार)",
+    soilTypes: {
+      black: "Black Cotton Soil / Regur (काळी कसदार माती - Highly moisture retentive)",
+      red: "Red & Laterite Soil (तांबडी / जांभी माती - Porous, well-draining)",
+      alluvial: "Alluvial / Loamy Soil (गाळाची / दोमट माती - Rich in organic matter)",
+      sandy: "Sandy / Light Soil (रेताड / हलकी माती - High aeration, quick draining)",
+      clayey: "Clayey / Heavy Soil (चिकणमाती - High water holding capacity)",
+      saline: "Saline / Sodic Soil (खारवट / चोपण जमीन - Salt affected / reclaimed)",
+    },
     tenureOptions: {
       owner: "Owner Cultivator",
       tenant: "Tenant / Leased Cultivator",
@@ -132,6 +139,15 @@ const i18nTexts = {
     cropType: "फसल का प्रकार / मौसम",
     sowingDate: "बुवाई / रोपाई की तारीख",
     tenure: "किसान की स्थिति",
+    soilType: "मिट्टी का प्रकार (Soil Type)",
+    soilTypes: {
+      black: "काली कपासी मिट्टी / रेगुर (नमी धारण करने वाली काली मिट्टी)",
+      red: "लाल व लैटेराइट मिट्टी (हल्की, जल निकास युक्त)",
+      alluvial: "जलोढ़ / दोमट मिट्टी (अत्यंत उपजाऊ नदी घाटी मिट्टी)",
+      sandy: "बलुई / रेतीली मिट्टी (हल्की, हवादार, शीघ्र सूखने वाली)",
+      clayey: "चिकनी / भारी मिट्टी (उच्च नमी धारण, धान-गन्ना उपयुक्त)",
+      saline: "लवणीय / क्षारीय मिट्टी (चोपन जमीन - सुधार योग्य)",
+    },
     tenureOptions: {
       owner: "स्वयं का खेत (भूमि स्वामी)",
       tenant: "किरायेदार / पट्टेदार किसान",
@@ -198,6 +214,15 @@ const i18nTexts = {
     cropType: "हंगाम / पिकाचा प्रकार",
     sowingDate: "पेरणीची तारीख",
     tenure: "शेतकरी स्थिती",
+    soilType: "मातीचा प्रकार (Soil Type)",
+    soilTypes: {
+      black: "काळी कसदार माती / भारी जमीन (ओलावा टिकवून ठेवणारी काळी माती)",
+      red: "तांबडी व जांभी माती (पाण्याचा चांगला निचरा होणारी माती)",
+      alluvial: "गाळाची / दोमट माती (अत्यंत सुपीक नदीकाठची जमीन)",
+      sandy: "रेताड / हलकी माती (हलकी, जलद निचरा, भुसभुशीत जमीन)",
+      clayey: "चिकणमाती (भारी ओलावा, भात व उसासाठी उत्तम)",
+      saline: "खारवट / चोपण जमीन (क्षारयुक्त माती / निचरा आवश्यक)",
+    },
     tenureOptions: {
       owner: "स्वतःची जमीन (मालक)",
       tenant: "भाडेकरू शेतकरी",
@@ -243,8 +268,8 @@ export default function Login({ locale, setLocale, onLogin }: LoginProps) {
   const [activeTab, setActiveTab] = useState<AuthTab>("signin");
 
   // Sign In State
-  const [identifier, setIdentifier] = useState(demoCredentials.phone);
-  const [password, setPassword] = useState(demoCredentials.password);
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
@@ -265,6 +290,7 @@ export default function Login({ locale, setLocale, onLogin }: LoginProps) {
   const [regDistrict, setRegDistrict] = useState("Nashik");
   const [regState, setRegState] = useState("Maharashtra");
   const [regTenure, setRegTenure] = useState("Owner Cultivator");
+  const [regSoilType, setRegSoilType] = useState("Black Cotton Soil (काळी कसदार माती)");
 
   // Crop State
   const [regCrop, setRegCrop] = useState("Onion");
@@ -341,6 +367,7 @@ export default function Login({ locale, setLocale, onLogin }: LoginProps) {
     try {
       const profile = await apiLogin(identifier.trim(), password);
       onLogin(profile);
+      window.location.href = "/";
     } catch (err: any) {
       setError(err.message || "Failed to sign in. Please verify your credentials.");
     } finally {
@@ -397,12 +424,14 @@ export default function Login({ locale, setLocale, onLogin }: LoginProps) {
         landSize: regLandSize,
         landUnit: regLandUnit,
         farmSize: `${regLandSize} ${regLandUnit}`,
+        soilType: regSoilType,
         tenure: regTenure.trim(),
         cropImage: cropImage || undefined,
         landImage: landImage || undefined,
         agreeTerms,
       });
       onLogin(profile);
+      window.location.href = "/";
     } catch (err: any) {
       setError(err.message || "Registration failed. Please try again.");
     } finally {
@@ -472,19 +501,6 @@ export default function Login({ locale, setLocale, onLogin }: LoginProps) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const fillQuickDemo = (type: "farmer" | "admin") => {
-    setError("");
-    setSuccessMsg("");
-    if (type === "farmer") {
-      setIdentifier(demoCredentials.phone);
-      setPassword(demoCredentials.password);
-    } else {
-      setIdentifier(adminCredentials.phone);
-      setPassword(adminCredentials.password);
-    }
-    setActiveTab("signin");
   };
 
   return (
@@ -723,6 +739,27 @@ export default function Login({ locale, setLocale, onLogin }: LoginProps) {
                   <span>{loading ? "Signing in..." : t.signInBtn}</span>
                   <ArrowRight size={17} />
                 </button>
+
+                {/* Registered Account Reference */}
+                <div className="mt-3 bg-emerald-50/90 border border-emerald-200/80 rounded-xl p-2.5 text-[11px] text-emerald-950 space-y-0.5">
+                  <div className="font-bold flex items-center gap-1.5 text-emerald-900">
+                    <ShieldCheck size={14} className="text-emerald-700 shrink-0" />
+                    <span>
+                      {locale === "mr"
+                        ? "नोंदणीकृत शेतकरी लॉगिन तपशील:"
+                        : locale === "hi"
+                        ? "पंजीकृत किसान लॉगिन विवरण:"
+                        : "Registered Farmer Login Details:"}
+                    </span>
+                  </div>
+                  <p className="text-slate-600 pl-5">
+                    {locale === "mr"
+                      ? "मोबाइल: 9876543210 · पासवर्ड: kisan123 (किंवा स्वतःचा नोंदणीकृत मोबाइल व पासवर्ड वापरा)"
+                      : locale === "hi"
+                      ? "मोबाइल: 9876543210 · पासवर्ड: kisan123 (या अपना पंजीकृत मोबाइल व पासवर्ड डालें)"
+                      : "Mobile: 9876543210 · Password: kisan123 (or use your registered phone & password)"}
+                  </p>
+                </div>
               </form>
 
               {/* Switch link */}
@@ -738,31 +775,6 @@ export default function Login({ locale, setLocale, onLogin }: LoginProps) {
                 >
                   {t.createAccountBtn}
                 </button>
-              </div>
-
-              {/* Quick Demo Logins Box */}
-              <div className="mt-6 pt-5 border-t border-slate-200">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2">
-                  {t.demoQuickLogin}
-                </span>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    className="p-2.5 bg-emerald-50/80 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-left transition"
-                    onClick={() => fillQuickDemo("farmer")}
-                  >
-                    <div className="text-xs font-bold text-emerald-900">{t.demoFarmer}</div>
-                    <div className="text-[11px] text-emerald-700">9876543210 · kisan123</div>
-                  </button>
-                  <button
-                    type="button"
-                    className="p-2.5 bg-amber-50/80 hover:bg-amber-100 border border-amber-200 rounded-xl text-left transition"
-                    onClick={() => fillQuickDemo("admin")}
-                  >
-                    <div className="text-xs font-bold text-amber-900">{t.demoAdmin}</div>
-                    <div className="text-[11px] text-amber-700">9999999999 · Admin@agrisathi2026</div>
-                  </button>
-                </div>
               </div>
             </div>
           )}
@@ -969,6 +981,29 @@ export default function Login({ locale, setLocale, onLogin }: LoginProps) {
                       </select>
                     </label>
                   </div>
+
+                  {/* Soil Type Selection */}
+                  <label className="block">
+                    <span className="text-xs font-semibold text-slate-700 mb-1 block">
+                      {t.soilType} *
+                    </span>
+                    <div className="input-wrap flex items-center bg-white border border-slate-300 rounded-xl px-3 py-2">
+                      <span className="text-slate-400 mr-2 text-sm shrink-0">🪴</span>
+                      <select
+                        required
+                        className="bg-transparent w-full text-xs sm:text-sm font-medium text-slate-800 outline-none cursor-pointer"
+                        value={regSoilType}
+                        onChange={(e) => setRegSoilType(e.target.value)}
+                      >
+                        <option value="Black Cotton Soil (काळी कसदार माती)">{t.soilTypes.black}</option>
+                        <option value="Red & Laterite Soil (तांबडी / जांभी माती)">{t.soilTypes.red}</option>
+                        <option value="Alluvial / Loamy Soil (गाळाची / दोमट माती)">{t.soilTypes.alluvial}</option>
+                        <option value="Sandy / Light Soil (रेताड / हलकी माती)">{t.soilTypes.sandy}</option>
+                        <option value="Clayey / Heavy Soil (चिकणमाती)">{t.soilTypes.clayey}</option>
+                        <option value="Saline / Sodic Soil (खारवट / चोपण जमीन)">{t.soilTypes.saline}</option>
+                      </select>
+                    </div>
+                  </label>
 
                   <div className="grid grid-cols-3 gap-2">
                     <label className="block">

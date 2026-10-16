@@ -9,9 +9,10 @@ import {
   Loader2,
   RefreshCw,
   Info,
+  Volume2,
 } from "lucide-react";
 import type { Locale } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
+import { useVoice } from "@/hooks/useVoice";
 
 interface CropScannerProps {
   locale: Locale;
@@ -29,7 +30,52 @@ interface DiagnosisResult {
   disclaimer: string;
 }
 
+/**
+ * Client-Side Image Compressor for rural low-bandwidth networks
+ * Downscales photos to max 1280px width/height and compresses to WebP/JPEG ~200KB
+ */
+function compressImage(file: File, maxDim = 1280, quality = 0.8): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(e.target?.result as string);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressedBase64 = canvas.toDataURL("image/jpeg", quality);
+        resolve(compressedBase64);
+      };
+      img.onerror = reject;
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export function CropScanner({ locale, defaultCrop = "Onion" }: CropScannerProps) {
+  const voice = useVoice(locale);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<DiagnosisResult | null>(null);
@@ -37,7 +83,7 @@ export function CropScanner({ locale, defaultCrop = "Onion" }: CropScannerProps)
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -46,19 +92,25 @@ export function CropScanner({ locale, defaultCrop = "Onion" }: CropScannerProps)
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Image size exceeds 5MB limit. Please take or choose a smaller photo.");
-      return;
-    }
-
     setError(null);
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result as string;
-      setImagePreview(base64);
-      analyzeLeaf(base64);
-    };
-    reader.readAsDataURL(file);
+    setAnalyzing(true);
+
+    try {
+      // Compress client-side to save mobile data & prevent timeouts
+      const compressedBase64 = await compressImage(file);
+      setImagePreview(compressedBase64);
+      await analyzeLeaf(compressedBase64);
+    } catch (err) {
+      console.error("Compression error:", err);
+      // Fallback to direct reading
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        setImagePreview(base64);
+        analyzeLeaf(base64);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const analyzeLeaf = async (base64Image: string) => {
@@ -104,26 +156,38 @@ export function CropScanner({ locale, defaultCrop = "Onion" }: CropScannerProps)
     setError(null);
   };
 
+  const speakResult = () => {
+    if (!result) return;
+    const text =
+      locale === "mr"
+        ? `पिकाचे नाव: ${result.plantName}. रोग ओळख: ${result.diseaseName}. खात्री: ${Math.round(result.confidence * 100)} टक्के. उपाय: ${result.treatments.join(". ")}`
+        : locale === "hi"
+        ? `फसल: ${result.plantName}। रोग पहचान: ${result.diseaseName}। विश्वास: ${Math.round(result.confidence * 100)}%। उपचार: ${result.treatments.join(". ")}`
+        : `Crop: ${result.plantName}. Diagnosis: ${result.diseaseName}. Confidence: ${Math.round(result.confidence * 100)}%. Treatments: ${result.treatments.join(". ")}`;
+
+    voice.speak(text);
+  };
+
   return (
     <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
-            ICAR / Plant.id Diagnostic
+            ICAR & Plant Pathology Diagnostic
           </span>
           <h3 className="text-lg font-bold text-slate-800 mt-1">
             {locale === "hi"
-              ? "फसल रोग पहचान एवं निदान"
+              ? "फसल रोग पहचान एवं त्वरित निदान"
               : locale === "mr"
-                ? "पीक रोग ओळख आणि उपाय"
-                : "Crop Disease Identification & Care"}
+              ? "पीक रोग व कीड ओळख आणि अचूक उपाय"
+              : "Crop Disease Identification & Care"}
           </h3>
           <p className="text-xs text-slate-500">
             {locale === "hi"
-              ? "पत्ती या पौधे की स्पष्ट फोटो अपलोड करें"
+              ? "पत्ती या पौधे की स्पष्ट फोटो अपलोड करें (स्वचालित कंप्रेसन युक्त)"
               : locale === "mr"
-                ? "पानाची किंवा पिकाची स्पष्ट फोटो जोडा"
-                : "Upload or capture a clear photo of an affected leaf or plant"}
+              ? "बाधित पानाचा स्पष्ट फोटो काढा किंवा जोडा (जलद 2G/3G अपलोड)"
+              : "Upload or capture photo (auto-compressed for low-bandwidth networks)"}
           </p>
         </div>
 
@@ -137,12 +201,22 @@ export function CropScanner({ locale, defaultCrop = "Onion" }: CropScannerProps)
         />
 
         {imagePreview && (
-          <button
-            onClick={resetScanner}
-            className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg font-medium transition"
-          >
-            <RefreshCw size={14} /> New Scan
-          </button>
+          <div className="flex items-center gap-2">
+            {result && (
+              <button
+                onClick={speakResult}
+                className="flex items-center gap-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-lg font-medium transition"
+              >
+                <Volume2 size={14} /> Listen
+              </button>
+            )}
+            <button
+              onClick={resetScanner}
+              className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg font-medium transition"
+            >
+              <RefreshCw size={14} /> New Scan
+            </button>
+          </div>
         )}
       </div>
 
@@ -157,17 +231,17 @@ export function CropScanner({ locale, defaultCrop = "Onion" }: CropScannerProps)
           </div>
           <div>
             <strong className="text-sm font-semibold text-slate-800 block">
-              Tap to take photo or choose image
+              {locale === "mr" ? "फोटो काढण्यासाठी किंवा निवडण्यासाठी टॅप करा" : "Tap to capture or choose photo"}
             </strong>
             <span className="text-xs text-slate-500">
-              Supports JPEG, PNG, WebP up to 5MB
+              {locale === "mr" ? "कॅमेरा किंवा गॅलरी (स्वयंचलित ऑप्टिमाइझ)" : "Camera or Gallery (auto-optimized for 2G/3G)"}
             </span>
           </div>
           <button
             type="button"
             className="mt-1 bg-white border border-emerald-300 text-emerald-800 text-xs font-semibold px-4 py-2 rounded-lg shadow-sm flex items-center gap-1.5"
           >
-            <Upload size={14} /> Select Crop Photo
+            <Upload size={14} /> {locale === "mr" ? "पानाचा फोटो निवडा" : "Select Crop Photo"}
           </button>
         </div>
       )}
@@ -265,4 +339,5 @@ export function CropScanner({ locale, defaultCrop = "Onion" }: CropScannerProps)
     </div>
   );
 }
+
 export default CropScanner;

@@ -13,6 +13,7 @@ export type FarmerProfile = {
   cropType?: string;
   sowingDate?: string;
   farmSize: string;
+  soilType?: string;
   landSize?: string | number;
   landUnit?: string;
   cropImage?: string | null;
@@ -40,6 +41,7 @@ export const demoProfile: FarmerProfile = {
   phone: demoCredentials.phone,
   crop: "Onion",
   farmSize: "2.4 acres",
+  soilType: "Black Cotton Soil (काळी कसदार माती)",
   tenure: "Tenant cultivator · verified by FPO",
   memberId: "KS-MH-2048",
   role: "farmer",
@@ -119,6 +121,7 @@ export async function apiLogin(identifier: string, password: string): Promise<Fa
     cropType: user.crop_type,
     sowingDate: user.sowing_date,
     farmSize: user.farm_size || "2 acres",
+    soilType: user.soil_type || "Black Cotton Soil (काळी कसदार माती)",
     landUnit: user.land_unit || "acres",
     cropImage: user.crop_image,
     landImage: user.land_image,
@@ -147,6 +150,7 @@ export async function apiRegister(form: {
   crop: string;
   cropType?: string;
   sowingDate?: string;
+  soilType?: string;
   landSize?: string | number;
   landUnit?: string;
   farmSize?: string;
@@ -181,6 +185,7 @@ export async function apiRegister(form: {
     cropType: user.crop_type || form.cropType,
     sowingDate: user.sowing_date || form.sowingDate,
     farmSize: user.farm_size,
+    soilType: user.soil_type || form.soilType || "Black Cotton Soil (काळी कसदार माती)",
     landSize: form.landSize,
     landUnit: user.land_unit || form.landUnit,
     cropImage: user.crop_image || form.cropImage,
@@ -218,6 +223,7 @@ export async function checkAuth(): Promise<FarmerProfile | null> {
       cropType: user.crop_type,
       sowingDate: user.sowing_date,
       farmSize: user.farm_size,
+      soilType: user.soil_type || "Black Cotton Soil (काळी कसदार माती)",
       landUnit: user.land_unit,
       cropImage: user.crop_image,
       landImage: user.land_image,
@@ -258,6 +264,7 @@ export async function apiUpdateProfile(fields: Partial<FarmerProfile>): Promise<
       state: fields.state,
       crop: fields.crop,
       farm_size: fields.farmSize,
+      soil_type: fields.soilType,
       tenure: fields.tenure,
     }),
   });
@@ -278,6 +285,7 @@ export async function apiUpdateProfile(fields: Partial<FarmerProfile>): Promise<
     email: user.email,
     crop: user.crop,
     farmSize: user.farm_size,
+    soilType: user.soil_type || fields.soilType || "Black Cotton Soil (काळी कसदार माती)",
     tenure: user.tenure,
     memberId: user.member_id,
     role: user.role,

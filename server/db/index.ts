@@ -185,6 +185,7 @@ export async function createUser(userData: {
   crop_image?: string | null;
   land_image?: string | null;
   land_unit?: string | null;
+  soil_type?: string | null;
 }): Promise<UserRecord> {
   const now = new Date().toISOString();
   const role: UserRole = userData.role || "farmer";
@@ -193,8 +194,8 @@ export async function createUser(userData: {
   if (isUsingMySQL && mysqlPool) {
     try {
       const [result]: any = await mysqlPool.query(
-        `INSERT INTO users (name, phone, email, password_hash, role, village, district, state, crop, farm_size, tenure, member_id, crop_type, sowing_date, crop_image, land_image, land_unit, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        `INSERT INTO users (name, phone, email, password_hash, role, village, district, state, crop, farm_size, tenure, member_id, crop_type, sowing_date, crop_image, land_image, land_unit, soil_type, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
         [
           userData.name,
           userData.phone,
@@ -213,6 +214,7 @@ export async function createUser(userData: {
           userData.crop_image || null,
           userData.land_image || null,
           userData.land_unit || "acres",
+          userData.soil_type || "Black Cotton Soil (काळी माती)",
         ]
       );
       return (await findUserById(result.insertId))!;
@@ -261,6 +263,7 @@ export async function createUser(userData: {
     crop_image: userData.crop_image || null,
     land_image: userData.land_image || null,
     land_unit: userData.land_unit || "acres",
+    soil_type: userData.soil_type || "Black Cotton Soil (काळी माती)",
     created_at: now,
   };
   data.users.push(newUser);
